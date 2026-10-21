@@ -19,11 +19,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Set up Gradle
+      - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
-      - name: Make Gradle wrapper executable
-        run: chmod +x ./gradlew
+        with:
+          gradle-version: '9.3.1'
       - name: Compile debug app
-        run: ./gradlew --no-daemon :app:assembleDebug
+        run: gradle --no-daemon :app:assembleDebug
       - name: Run unit tests
-        run: ./gradlew --no-daemon :app:testDebugUnitTest
+        run: gradle --no-daemon :app:testDebugUnitTest
