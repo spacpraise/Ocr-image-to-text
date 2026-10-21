@@ -29,17 +29,28 @@ object ImageUtils {
 
     fun loadBitmapFromUri(context: Context, uri: Uri, maxDimension: Int = 1800): Bitmap? {
         if (maxDimension <= 0) return null
+
+        // Shared content:// URIs may be backed by providers that do not reliably reopen
+        // streams. Copy once while the temporary share permission is active, then decode
+        // the same seekable cache file twice (bounds first, pixels second).
+        var stagedFile: File? = null
         return try {
             val resolver = context.contentResolver
-            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            resolver.openInputStream(uri)?.use { stream ->
-                BitmapFactory.decodeStream(stream, null, bounds)
+            stagedFile = File.createTempFile("shared-image-", ".tmp", context.cacheDir)
+            resolver.openInputStream(uri)?.use { input ->
+                stagedFile.outputStream().buffered().use { output ->
+                    input.copyTo(output)
+                }
             } ?: return null
 
+            if (stagedFile.length() <= 0L) return null
+
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(stagedFile.absolutePath, bounds)
             if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
             var sampleSize = 1
-            while (maxOf(bounds.outWidth, bounds.outHeight) / sampleSize > maxDimension * 2) {
+            while (maxOf(bounds.outWidth, bounds.outHeight) / sampleSize > maxDimension) {
                 sampleSize *= 2
             }
 
@@ -47,15 +58,15 @@ object ImageUtils {
                 inSampleSize = sampleSize
                 inPreferredConfig = Bitmap.Config.ARGB_8888
             }
-            resolver.openInputStream(uri)?.use { stream ->
-                BitmapFactory.decodeStream(stream, null, options)
-            }
+            BitmapFactory.decodeFile(stagedFile.absolutePath, options)
         } catch (_: SecurityException) {
             null
         } catch (_: OutOfMemoryError) {
             null
         } catch (_: Exception) {
             null
+        } finally {
+            stagedFile?.delete()
         }
     }
 
