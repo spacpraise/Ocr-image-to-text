@@ -147,7 +147,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onImagePicked(uri: Uri, context: Context, autoScan: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
             val bitmap = ImageUtils.loadBitmapFromUri(context, uri)
-            val metadata = ImageUtils.getImageMetadata(context, uri)
+            val metadata = if (bitmap != null) ImageUtils.getImageMetadata(context, uri) else null
             withContext(Dispatchers.Main) {
                 _selectedUri.value = uri
                 _selectedBitmap.value = bitmap
@@ -155,7 +155,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _extractedResult.value = null
                 _editableText.value = ""
                 _currentSavedScanId.value = null
-                if (autoScan) startScanning(context) else navigateTo(Screen.ImagePreview)
+
+                if (bitmap == null) {
+                    _isScanning.value = false
+                    _scanError.value = "This image could not be opened. It may be unsupported, unavailable, or too large. Try saving it to your device and sharing it again."
+                    _scanStatusMessage.value = "Unable to open image"
+                    navigateTo(Screen.Scanning)
+                } else if (autoScan) {
+                    startScanning(context)
+                } else {
+                    navigateTo(Screen.ImagePreview)
+                }
             }
         }
     }
