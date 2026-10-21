@@ -53,14 +53,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val viewModel: MainViewModel = viewModel()
-            val themeMode by viewModel.themeMode.collectAsState()
-            val isDark = when (themeMode) {
-                AppThemeMode.SYSTEM -> isSystemInDarkTheme()
-                AppThemeMode.LIGHT -> false
-                AppThemeMode.DARK -> true
-            }
-
-            SnapTextTheme(darkTheme = isDark) {
+            SnapTextTheme(darkTheme = isSystemInDarkTheme()) {
                 SnapTextApp(viewModel = viewModel)
             }
         }
