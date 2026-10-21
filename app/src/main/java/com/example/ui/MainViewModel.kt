@@ -279,7 +279,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _currentSavedScanId.value = id
                     _isEditMode.value = false
                     updateStorageInfo()
-                    navigateTo(Screen.Result)
+                    // Keep the completed scan on the scanning route; the UI switches to selectable OCR text in place.
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
