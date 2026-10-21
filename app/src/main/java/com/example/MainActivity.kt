@@ -92,12 +92,29 @@ fun SnapTextApp(
                 sharedIntent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
                     ?: sharedIntent.clipData?.getItemAt(0)?.uri
             } else {
-                sharedIntent.clipData?.getItemAt(0)?.uri
+                @Suppress("DEPRECATION")
+                val streams = sharedIntent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+                streams?.firstOrNull() ?: sharedIntent.clipData?.getItemAt(0)?.uri
             }
-            if (sharedUri != null) {
-                viewModel.onImagePicked(sharedUri, context, autoScan = true)
-            } else {
-                Toast.makeText(context, "Could not open the shared image.", Toast.LENGTH_LONG).show()
+            val declaredType = sharedIntent.type
+            val resolvedType = sharedUri?.let { uri ->
+                runCatching { context.contentResolver.getType(uri) }.getOrNull()
+            }
+            val isImage = declaredType?.startsWith("image/") == true ||
+                resolvedType?.startsWith("image/") == true
+
+            when {
+                sharedUri == null -> Toast.makeText(
+                    context,
+                    "Could not open the shared image. Try sharing an image file directly.",
+                    Toast.LENGTH_LONG
+                ).show()
+                !isImage -> Toast.makeText(
+                    context,
+                    "This file type is not supported yet. Share an image such as JPG, PNG or WebP.",
+                    Toast.LENGTH_LONG
+                ).show()
+                else -> viewModel.onImagePicked(sharedUri, context, autoScan = true)
             }
             onShareIntentHandled()
         }
