@@ -51,7 +51,7 @@ fun ImageSourceSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = null
     ) {
         Column(
@@ -66,7 +66,7 @@ fun ImageSourceSheet(
                 text = "Choose an option",
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
                 fontWeight = FontWeight.Bold,
-                color = TextBlack,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
@@ -109,8 +109,8 @@ fun ImageSourceSheet(
                     .testTag("cancel_source_button"),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PureBlack,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(
@@ -140,7 +140,7 @@ private fun OptionCard(
             .testTag(testTag),
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(1.2.dp, BorderSubtle),
-        color = Color.White
+        color = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -150,7 +150,7 @@ private fun OptionCard(
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                tint = TextBlack,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(36.dp)
             )
             Spacer(modifier = Modifier.height(10.dp))
