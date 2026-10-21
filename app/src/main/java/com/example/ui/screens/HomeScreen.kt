@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,47 +13,30 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Photo
-import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -64,19 +46,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.ScanEntity
 import com.example.ocr.SampleDocumentType
-import com.example.ui.theme.BadgeBlueBg
-import com.example.ui.theme.BadgeBlueIcon
-import com.example.ui.theme.BadgeGreenBg
-import com.example.ui.theme.BadgeGreenIcon
-import com.example.ui.theme.BadgePeachBg
-import com.example.ui.theme.BadgePeachIcon
-import com.example.ui.theme.BadgePurpleBg
-import com.example.ui.theme.BadgePurpleIcon
-import com.example.ui.theme.BorderSubtle
-import com.example.ui.theme.MintGreen
-import com.example.ui.theme.PureBlack
-import com.example.ui.theme.TextBlack
-import com.example.ui.theme.TextSecondary
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -94,480 +63,258 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        verticalArrangement = Arrangement.spacedBy(22.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             start = 22.dp,
             end = 22.dp,
-            top = 18.dp,
-            bottom = 96.dp
-        )
+            top = 16.dp,
+            bottom = 28.dp
+        ),
+        verticalArrangement = Arrangement.spacedBy(22.dp)
     ) {
-        // Header exactly matching screenshot: "Image To" / "Text" + 3-dots menu
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 680.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(
-                            text = "Image To",
-                            style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp),
-                            fontWeight = FontWeight.Bold,
-                            color = TextBlack
-                        )
-                        Text(
-                            text = "Text",
-                            style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp),
-                            fontWeight = FontWeight.Bold,
-                            color = TextBlack
-                        )
-                    }
-
-                    Box {
-                        IconButton(
-                            onClick = { showMenu = true },
-                            modifier = Modifier.testTag("home_more_menu_button")
-                        ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(11.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Outlined.MoreVert,
-                                contentDescription = "More Options",
-                                tint = TextBlack
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(Color.White)
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Settings", color = TextBlack) },
-                                onClick = {
-                                    showMenu = false
-                                    onNavigateToSettings()
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Settings,
-                                        contentDescription = null,
-                                        tint = TextBlack
-                                    )
-                                },
-                                modifier = Modifier.testTag("menu_item_settings")
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Scan History", color = TextBlack) },
-                                onClick = {
-                                    showMenu = false
-                                    onViewAllScans()
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.History,
-                                        contentDescription = null,
-                                        tint = TextBlack
-                                    )
-                                },
-                                modifier = Modifier.testTag("menu_item_history")
+                                imageVector = Icons.Outlined.Image,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(23.dp)
                             )
                         }
                     }
+                    Spacer(Modifier.width(11.dp))
+                    Text(
+                        text = "SnapText",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
-            }
-        }
-
-        // Minimalist Document Category Shelf directly matching screenshot
-        // Image | Certificate | Book | Receipt
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 680.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                IconButton(
+                    onClick = onNavigateToSettings,
+                    modifier = Modifier.testTag("home_settings_button")
                 ) {
-                    CategoryItemCard(
-                        title = "Image",
-                        icon = Icons.Outlined.Image,
-                        badgeBg = BadgeBlueBg,
-                        iconTint = BadgeBlueIcon,
-                        modifier = Modifier.weight(1f),
-                        testTag = "category_image",
-                        onClick = onExtractTextClick
-                    )
-
-                    CategoryItemCard(
-                        title = "Certificate",
-                        icon = Icons.Outlined.WorkspacePremium,
-                        badgeBg = BadgePeachBg,
-                        iconTint = BadgePeachIcon,
-                        modifier = Modifier.weight(1f),
-                        testTag = "category_certificate",
-                        onClick = { onSampleSelect(SampleDocumentType.CONTRACT) }
-                    )
-
-                    CategoryItemCard(
-                        title = "Book",
-                        icon = Icons.Outlined.AutoStories,
-                        badgeBg = BadgeGreenBg,
-                        iconTint = BadgeGreenIcon,
-                        modifier = Modifier.weight(1f),
-                        testTag = "category_book",
-                        onClick = { onSampleSelect(SampleDocumentType.MEETING_NOTES) }
-                    )
-
-                    CategoryItemCard(
-                        title = "Receipt",
-                        icon = Icons.Outlined.ReceiptLong,
-                        badgeBg = BadgePurpleBg,
-                        iconTint = BadgePurpleIcon,
-                        modifier = Modifier.weight(1f),
-                        testTag = "category_receipt",
-                        onClick = { onSampleSelect(SampleDocumentType.INVOICE) }
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = "Settings",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
 
-        // Minimalist Main Action Card
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(
+                    text = "Text from any image.",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontSize = 29.sp,
+                        lineHeight = 35.sp
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = "Choose a photo. Copy the words.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
         item {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 680.dp)
                     .testTag("home_hero_card"),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
-                border = BorderStroke(1.2.dp, BorderSubtle)
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant
+                )
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(22.dp)
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Text(
-                        text = "Scan Text From\nImage or Camera",
-                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
-                        fontWeight = FontWeight.Bold,
-                        color = TextBlack,
-                        lineHeight = 26.sp
-                    )
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(156.dp)
+                            .clip(RoundedCornerShape(18.dp)),
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(58.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Description,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(29.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "Screenshot  ·  Photo  ·  Document",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Extract readable, editable text accurately with AI.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
-                    )
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Prominent "Choose an option" / "Extract Text" button
                     Button(
-                        onClick = onExtractTextClick,
+                        onClick = onUploadImageClick,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)
                             .testTag("extract_text_button"),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(15.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = PureBlack,
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Image,
+                            contentDescription = null,
+                            modifier = Modifier.size(19.dp)
+                        )
+                        Spacer(Modifier.width(9.dp))
+                        Text("Choose an image", fontWeight = FontWeight.SemiBold)
+                    }
+
+                    OutlinedButton(
+                        onClick = onTakePhotoClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .testTag("take_photo_button"),
+                        shape = RoundedCornerShape(15.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.CameraAlt,
                             contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(19.dp)
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "Choose an option",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Quick Actions: Camera and Gallery
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = onTakePhotoClick,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(46.dp)
-                                .testTag("take_photo_action"),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, BorderSubtle),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = TextBlack
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.CameraAlt,
-                                contentDescription = null,
-                                tint = TextBlack,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Camera",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        OutlinedButton(
-                            onClick = onUploadImageClick,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(46.dp)
-                                .testTag("upload_image_action"),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, BorderSubtle),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = TextBlack
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Photo,
-                                contentDescription = null,
-                                tint = TextBlack,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Gallery",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
+                        Spacer(Modifier.width(9.dp))
+                        Text("Take a photo")
                     }
                 }
             }
         }
 
-        // Recent Scans Header
         item {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 680.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Recent Scans",
+                    text = "Recent scans",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = TextBlack
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
-
                 if (recentScans.isNotEmpty()) {
-                    TextButton(
-                        onClick = onViewAllScans,
-                        modifier = Modifier.testTag("home_view_all_scans")
-                    ) {
-                        Text(
-                            text = "View All",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = TextSecondary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            tint = TextSecondary,
-                            modifier = Modifier.size(14.dp)
-                        )
+                    androidx.compose.material3.TextButton(onClick = onViewAllScans) {
+                        Text("See all")
                     }
                 }
             }
         }
 
-        // Recent Scans List or Empty State
         if (recentScans.isEmpty()) {
             item {
-                Card(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .widthIn(max = 680.dp)
-                        .testTag("home_empty_state_card"),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    border = BorderStroke(1.dp, BorderSubtle)
+                        .padding(vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 34.dp, horizontal = 20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(54.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Description,
-                                    contentDescription = null,
-                                    tint = TextSecondary,
-                                    modifier = Modifier.size(26.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = "No scans yet",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextBlack
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = "Scanned documents and pictures will appear here.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                    }
-                }
-            }
-        } else {
-            items(recentScans, key = { it.id }) { scan ->
-                RecentScanCard(
-                    scan = scan,
-                    onClick = { onReopenScan(scan) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 680.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CategoryItemCard(
-    title: String,
-    icon: ImageVector,
-    badgeBg: Color,
-    iconTint: Color,
-    testTag: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
-            .testTag(testTag),
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        border = BorderStroke(1.dp, BorderSubtle)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 14.dp, horizontal = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = badgeBg,
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = icon,
-                        contentDescription = title,
-                        tint = iconTint,
-                        modifier = Modifier.size(22.dp)
+                        imageVector = Icons.Outlined.History,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(30.dp)
+                    )
+                    Text(
+                        text = "Your scans will appear here",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                fontWeight = FontWeight.Medium,
-                color = TextBlack
-            )
+        } else {
+            items(recentScans.take(5), key = { it.id }) { scan ->
+                RecentScanRow(scan = scan, onClick = { onReopenScan(scan) })
+            }
         }
     }
 }
 
 @Composable
-fun RecentScanCard(
+private fun RecentScanRow(
     scan: ScanEntity,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit
 ) {
-    Card(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .testTag("recent_scan_card_${scan.id}"),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant
         ),
-        border = BorderStroke(1.dp, BorderSubtle)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Thumbnail with optimization
+            val imageFile = (scan.thumbnailPath ?: scan.imagePath)?.let(::File)
             Surface(
                 modifier = Modifier
                     .size(58.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, BorderSubtle)
+                    .clip(RoundedCornerShape(10.dp)),
+                color = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                val thumbFile = (scan.thumbnailPath ?: scan.imagePath)?.let { File(it) }
-                if (thumbFile != null && thumbFile.exists()) {
+                if (imageFile != null && imageFile.exists()) {
                     AsyncImage(
-                        model = thumbFile,
-                        contentDescription = "Scan Thumbnail",
+                        model = imageFile,
+                        contentDescription = "Scan image",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -576,62 +323,37 @@ fun RecentScanCard(
                         Icon(
                             imageVector = Icons.Outlined.Description,
                             contentDescription = null,
-                            tint = TextSecondary,
-                            modifier = Modifier.size(26.dp)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            // Details
-            Column(modifier = Modifier.weight(1f)) {
+            Spacer(Modifier.width(13.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
                     text = scan.title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp),
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextBlack,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
                 Text(
-                    text = scan.extractedText.ifBlank { "No text recognized" },
+                    text = scan.extractedText.ifBlank { "No text found" },
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
-                    maxLines = 1,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                val formattedDate = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-                    .format(Date(scan.timestamp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = formattedDate,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextSecondary
-                    )
-                    Text(
-                        text = "•",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = BorderSubtle
-                    )
-                    Text(
-                        text = "${scan.characterCount} chars",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium,
-                        color = MintGreen
-                    )
-                }
+                Text(
+                    text = SimpleDateFormat("MMM d", Locale.getDefault())
+                        .format(Date(scan.timestamp)),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
