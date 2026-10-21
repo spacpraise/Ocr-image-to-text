@@ -65,7 +65,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val viewModel: MainViewModel = viewModel()
-            SnapTextTheme(darkTheme = isSystemInDarkTheme()) {
+            val resolvedDarkTheme = when (themeMode) {
+                AppThemeMode.LIGHT -> false
+                AppThemeMode.DARK -> true
+                AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+            SnapTextTheme(darkTheme = resolvedDarkTheme) {
                 SnapTextApp(
                 viewModel = viewModel,
                 incomingShareIntent = incomingShareIntent,
@@ -275,28 +280,14 @@ fun SnapTextApp(
                 }
 
                 is Screen.Scanning -> {
-                    if (!isScanning && extractedResult != null && scanError == null) {
-                        ResultScreen(
-                            originalBitmap = selectedBitmap,
-                            ocrResult = extractedResult,
-                            editableText = editableText,
-                            isEditMode = isEditMode,
-                            onToggleEditMode = { viewModel.toggleEditMode() },
-                            onTextChange = { viewModel.onTextEdited(it) },
-                            onSaveEdits = { viewModel.saveEditsToHistory() },
-                            onScanAnother = { showImageSourceSheet = true },
-                            onDeleteScan = { viewModel.deleteCurrentScan() },
-                            onBack = { viewModel.handleBack() }
-                        )
-                    } else {
-                        ScanningScreen(
-                            bitmap = selectedBitmap,
-                            statusMessage = scanStatusMessage,
-                            error = scanError,
-                            onRetry = { viewModel.retryScanning(context) },
-                            onBack = { viewModel.handleBack() }
-                        )
-                    }
+                    ScanningScreen(
+                        bitmap = selectedBitmap,
+                        statusMessage = scanStatusMessage,
+                        error = scanError,
+                        extractedText = if (!isScanning && scanError == null) editableText else null,
+                        onRetry = { viewModel.retryScanning(context) },
+                        onBack = { viewModel.handleBack() }
+                    )
                 }
 
                 is Screen.Result -> {
