@@ -1,5 +1,8 @@
 package com.example.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -25,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,11 +40,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.Screen
-import com.example.ui.theme.BottomNavBackground
-import com.example.ui.theme.BottomNavCradle
-import com.example.ui.theme.MintGreen
-import com.example.ui.theme.TextBlack
-import com.example.ui.theme.TextMuted
 
 @Composable
 fun AppBottomBar(
@@ -52,115 +51,140 @@ fun AppBottomBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(76.dp),
+            .height(78.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
-        // Soft rounded bottom bar background matching the screenshot
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp),
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-            color = BottomNavBackground,
-            shadowElevation = 0.dp
+                .height(66.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 10.dp,
+            tonalElevation = 2.dp
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
+                    .padding(horizontal = 26.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Home Nav Item
-                val isHome = currentScreen is Screen.Home
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { onNavigate(Screen.Home) }
-                        )
-                        .testTag("nav_item_home")
-                        .padding(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Home,
-                        contentDescription = "Home",
-                        tint = if (isHome) TextBlack else TextMuted,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Home",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        fontWeight = if (isHome) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (isHome) TextBlack else TextMuted
-                    )
-                }
+                NavItem(
+                    label = "Home",
+                    icon = Icons.Outlined.Home,
+                    selected = currentScreen is Screen.Home,
+                    onClick = { onNavigate(Screen.Home) },
+                    tag = "nav_item_home"
+                )
 
-                // Spacer in middle for the elevated center mint camera circle
-                Spacer(modifier = Modifier.size(72.dp))
+                Spacer(Modifier.size(66.dp))
 
-                // History Nav Item
-                val isHistory = currentScreen is Screen.History
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { onNavigate(Screen.History) }
-                        )
-                        .testTag("nav_item_history")
-                        .padding(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.History,
-                        contentDescription = "History",
-                        tint = if (isHistory) TextBlack else TextMuted,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "History",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        fontWeight = if (isHistory) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (isHistory) TextBlack else TextMuted
-                    )
-                }
+                NavItem(
+                    label = "History",
+                    icon = Icons.Outlined.History,
+                    selected = currentScreen is Screen.History,
+                    onClick = { onNavigate(Screen.History) },
+                    tag = "nav_item_history"
+                )
+
+                NavItem(
+                    label = "Settings",
+                    icon = Icons.Outlined.Settings,
+                    selected = currentScreen is Screen.Settings,
+                    onClick = { onNavigate(Screen.Settings) },
+                    tag = "nav_item_settings"
+                )
             }
         }
 
-        // Center Mint-Green Circular Camera Button inside soft circular cradle
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = (-6).dp)
-                .size(66.dp)
+                .offset(y = (-1).dp)
+                .size(60.dp)
+                .shadow(5.dp, CircleShape)
                 .clip(CircleShape)
-                .background(BottomNavCradle)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(5.dp),
             contentAlignment = Alignment.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(54.dp)
+                    .size(50.dp)
                     .clip(CircleShape)
-                    .background(MintGreen)
-                    .clickable(onClick = onQuickScanClick)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onQuickScanClick
+                    )
                     .testTag("quick_scan_fab"),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Outlined.CameraAlt,
-                    contentDescription = "Scan with Camera",
-                    tint = Color.White,
-                    modifier = Modifier.size(26.dp)
+                    contentDescription = "Start a scan",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun NavItem(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    tag: String
+) {
+    val iconColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = spring(stiffness = 500f),
+        label = "navIconColor"
+    )
+    val indicatorWidth by animateDpAsState(
+        targetValue = if (selected) 34.dp else 0.dp,
+        animationSpec = spring(stiffness = 420f, dampingRatio = 0.78f),
+        label = "navIndicatorWidth"
+    )
+
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .testTag(tag)
+            .padding(horizontal = 9.dp, vertical = 7.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = iconColor,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(Modifier.height(3.dp))
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            lineHeight = 12.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = iconColor
+        )
+        Spacer(Modifier.height(3.dp))
+        Box(
+            modifier = Modifier
+                .size(width = indicatorWidth, height = 3.dp)
+                .clip(CircleShape)
+                .background(if (selected) iconColor else Color.Transparent)
+        )
     }
 }
