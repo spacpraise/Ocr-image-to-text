@@ -1,0 +1,6 @@
+{
+  "name": "SnapText",
+  "description": "Modern image-to-text scanner to extract, edit, and copy readable text instantly without sign in.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
