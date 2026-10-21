@@ -28,35 +28,33 @@ data class ImageMetadata(
 object ImageUtils {
 
     fun loadBitmapFromUri(context: Context, uri: Uri, maxDimension: Int = 1800): Bitmap? {
+        if (maxDimension <= 0) return null
         return try {
-            val contentResolver = context.contentResolver
-            var inputStream: InputStream? = contentResolver.openInputStream(uri)
+            val resolver = context.contentResolver
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            resolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, bounds)
+            } ?: return null
+
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+            var sampleSize = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / sampleSize > maxDimension * 2) {
+                sampleSize *= 2
+            }
 
             val options = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
+                inSampleSize = sampleSize
+                inPreferredConfig = Bitmap.Config.ARGB_8888
             }
-            BitmapFactory.decodeStream(inputStream, null, options)
-            inputStream?.close()
-
-            var inSampleSize = 1
-            val (height: Int, width: Int) = options.outHeight to options.outWidth
-            if (height > maxDimension || width > maxDimension) {
-                val halfHeight: Int = height / 2
-                val halfWidth: Int = width / 2
-                while (halfHeight / inSampleSize >= maxDimension && halfWidth / inSampleSize >= maxDimension) {
-                    inSampleSize *= 2
-                }
+            resolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, options)
             }
-
-            val decodeOptions = BitmapFactory.Options().apply {
-                this.inSampleSize = inSampleSize
-            }
-            inputStream = contentResolver.openInputStream(uri)
-            val bitmap = BitmapFactory.decodeStream(inputStream, null, decodeOptions)
-            inputStream?.close()
-            bitmap
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (_: SecurityException) {
+            null
+        } catch (_: OutOfMemoryError) {
+            null
+        } catch (_: Exception) {
             null
         }
     }
