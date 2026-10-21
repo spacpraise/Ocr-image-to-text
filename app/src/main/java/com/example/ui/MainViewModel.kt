@@ -144,7 +144,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return false
     }
 
-    fun onImagePicked(uri: Uri, context: Context) {
+    fun onImagePicked(uri: Uri, context: Context, autoScan: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
             val bitmap = ImageUtils.loadBitmapFromUri(context, uri)
             val metadata = ImageUtils.getImageMetadata(context, uri)
@@ -155,7 +155,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _extractedResult.value = null
                 _editableText.value = ""
                 _currentSavedScanId.value = null
-                navigateTo(Screen.ImagePreview)
+                if (autoScan) startScanning(context) else navigateTo(Screen.ImagePreview)
             }
         }
     }
