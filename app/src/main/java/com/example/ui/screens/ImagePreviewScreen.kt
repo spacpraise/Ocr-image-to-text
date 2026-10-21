@@ -160,8 +160,8 @@ fun ImagePreviewScreen(
                                 .testTag("scan_for_text_button"),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = com.example.ui.theme.PureBlack,
-                                contentColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             ),
                             enabled = bitmap != null
                         ) {
