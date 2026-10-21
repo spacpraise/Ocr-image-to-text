@@ -2,6 +2,7 @@ package com.example
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,15 +48,29 @@ import com.example.util.configureAppCheck
 import java.io.File
 
 class MainActivity : ComponentActivity() {
+    var incomingShareIntent by mutableStateOf<Intent?>(null)
+        private set
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        incomingShareIntent = intent
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Configure App Check with launch intent before any UI or Firebase operations
         configureAppCheck(this, intent)
+        incomingShareIntent = intent.takeIf { it.action == Intent.ACTION_SEND || it.action == Intent.ACTION_SEND_MULTIPLE }
         enableEdgeToEdge()
         setContent {
             val viewModel: MainViewModel = viewModel()
             SnapTextTheme(darkTheme = isSystemInDarkTheme()) {
-                SnapTextApp(viewModel = viewModel)
+                SnapTextApp(
+                viewModel = viewModel,
+                incomingShareIntent = incomingShareIntent,
+                onShareIntentHandled = { incomingShareIntent = null }
+            )
             }
         }
     }
@@ -63,9 +79,30 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SnapTextApp(
     viewModel: MainViewModel,
+    incomingShareIntent: Intent? = null,
+    onShareIntentHandled: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    LaunchedEffect(incomingShareIntent) {
+        val sharedIntent = incomingShareIntent
+        if (sharedIntent != null) {
+            val sharedUri = if (sharedIntent.action == Intent.ACTION_SEND) {
+                @Suppress("DEPRECATION")
+                sharedIntent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                    ?: sharedIntent.clipData?.getItemAt(0)?.uri
+            } else {
+                sharedIntent.clipData?.getItemAt(0)?.uri
+            }
+            if (sharedUri != null) {
+                viewModel.onImagePicked(sharedUri, context, autoScan = true)
+            } else {
+                Toast.makeText(context, "Could not open the shared image.", Toast.LENGTH_LONG).show()
+            }
+            onShareIntentHandled()
+        }
+    }
+
     val currentScreen by viewModel.currentScreen.collectAsState()
     val recentScans by viewModel.recentScans.collectAsState()
     val allScans by viewModel.filteredScans.collectAsState()
