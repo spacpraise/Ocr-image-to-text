@@ -209,7 +209,7 @@ fun ResultScreen(
                             Icon(
                                 imageVector = Icons.Filled.Check,
                                 contentDescription = "Save Edits",
-                                tint = PrimaryBlue
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     } else {
@@ -241,7 +241,7 @@ fun ResultScreen(
                         Icon(
                             imageVector = Icons.Filled.Delete,
                             contentDescription = "Delete Scan",
-                            tint = DangerRed
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -277,7 +277,7 @@ fun ResultScreen(
                         Icon(
                             imageVector = Icons.Filled.AddAPhoto,
                             contentDescription = null,
-                            tint = PrimaryBlue,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -295,7 +295,7 @@ fun ResultScreen(
                             .testTag("copy_all_button"),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = PureBlack,
+                            containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = Color.White
                         )
                     ) {
@@ -373,12 +373,6 @@ fun ResultScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        StatisticsRow(ocrResult = ocrResult)
-
-                        if (!ocrResult?.confidenceNote.isNullOrBlank()) {
-                            ImageQualityBanner(note = ocrResult?.confidenceNote.orEmpty())
-                        }
-
                         ExtractedTextCard(
                             textFieldValue = textFieldValue,
                             onTextFieldValueChange = {
@@ -430,7 +424,7 @@ fun ResultScreen(
                                         Icon(
                                             imageVector = Icons.Filled.Description,
                                             contentDescription = null,
-                                            tint = PrimaryBlue,
+                                            tint = MaterialTheme.colorScheme.onSurface,
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Text(
@@ -468,14 +462,6 @@ fun ResultScreen(
                                 }
                             }
                         }
-                    }
-
-                    // Stats Bar (Characters, Words, Lines)
-                    StatisticsRow(ocrResult = ocrResult)
-
-                    // Image Quality Feedback Banner if image was blurry/dark or noted
-                    if (!ocrResult?.confidenceNote.isNullOrBlank()) {
-                        ImageQualityBanner(note = ocrResult?.confidenceNote.orEmpty())
                     }
 
                     // Extracted Text Card with Copy Selected, Select All, and In-place Editing
@@ -522,7 +508,7 @@ fun ResultScreen(
                         showDeleteConfirmDialog = false
                         onDeleteScan()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = DangerRed),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     modifier = Modifier.testTag("confirm_delete_scan_button")
                 ) {
                     Text("Delete")
@@ -589,7 +575,7 @@ private fun StatBadge(
                 text = value,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = PrimaryBlue
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = label,
@@ -608,8 +594,8 @@ private fun ImageQualityBanner(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        color = PrimaryBlue.copy(alpha = 0.08f),
-        border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.25f))
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
@@ -621,7 +607,7 @@ private fun ImageQualityBanner(
             Icon(
                 imageVector = Icons.Filled.Info,
                 contentDescription = null,
-                tint = PrimaryBlue,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
@@ -629,7 +615,7 @@ private fun ImageQualityBanner(
                     text = "Extraction Insight",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = PrimaryBlue
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = note,
@@ -682,7 +668,7 @@ private fun ExtractedTextCard(
                     Icon(
                         imageVector = Icons.Filled.AutoAwesome,
                         contentDescription = null,
-                        tint = PrimaryBlue,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
@@ -702,7 +688,7 @@ private fun ExtractedTextCard(
                             text = "Save",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
-                            color = PrimaryBlue
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 } else {
@@ -713,14 +699,14 @@ private fun ExtractedTextCard(
                         Icon(
                             imageVector = Icons.Filled.Edit,
                             contentDescription = null,
-                            tint = PrimaryBlue,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Edit Text",
                             style = MaterialTheme.typography.labelMedium,
-                            color = PrimaryBlue
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -745,7 +731,7 @@ private fun ExtractedTextCard(
                     Icon(
                         imageVector = Icons.Filled.SelectAll,
                         contentDescription = null,
-                        tint = PrimaryBlue,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -767,7 +753,7 @@ private fun ExtractedTextCard(
                     Icon(
                         imageVector = Icons.Filled.ContentCopy,
                         contentDescription = null,
-                        tint = PrimaryBlue,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
