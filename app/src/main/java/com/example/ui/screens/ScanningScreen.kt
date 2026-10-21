@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -236,12 +237,15 @@ fun ScanningScreen(
                         if (extractedText.isBlank()) {
                             Text("No text was detected in this image.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         } else {
-                            Text(
-                                text = extractedText,
-                                modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            SelectionContainer(
+                                modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())
+                            ) {
+                                Text(
+                                    text = extractedText,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
                     }
                 }
