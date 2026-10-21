@@ -22,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,7 +49,7 @@ fun AppBottomBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(78.dp),
+            .height(76.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
         Surface(
@@ -59,13 +57,13 @@ fun AppBottomBar(
                 .fillMaxWidth()
                 .height(66.dp),
             color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 10.dp,
-            tonalElevation = 2.dp
+            shadowElevation = 6.dp,
+            tonalElevation = 0.dp
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 26.dp),
+                    .padding(horizontal = 34.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -76,23 +74,13 @@ fun AppBottomBar(
                     onClick = { onNavigate(Screen.Home) },
                     tag = "nav_item_home"
                 )
-
-                Spacer(Modifier.size(66.dp))
-
+                Spacer(Modifier.size(60.dp))
                 NavItem(
                     label = "History",
                     icon = Icons.Outlined.History,
                     selected = currentScreen is Screen.History,
                     onClick = { onNavigate(Screen.History) },
                     tag = "nav_item_history"
-                )
-
-                NavItem(
-                    label = "Settings",
-                    icon = Icons.Outlined.Settings,
-                    selected = currentScreen is Screen.Settings,
-                    onClick = { onNavigate(Screen.Settings) },
-                    tag = "nav_item_settings"
                 )
             }
         }
@@ -102,7 +90,7 @@ fun AppBottomBar(
                 .align(Alignment.TopCenter)
                 .offset(y = (-1).dp)
                 .size(60.dp)
-                .shadow(5.dp, CircleShape)
+                .shadow(4.dp, CircleShape)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(5.dp),
@@ -123,7 +111,7 @@ fun AppBottomBar(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.CameraAlt,
-                    contentDescription = "Start a scan",
+                    contentDescription = "Scan an image",
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(24.dp)
                 )
@@ -141,13 +129,13 @@ private fun NavItem(
     tag: String
 ) {
     val iconColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.primary
+        targetValue = if (selected) MaterialTheme.colorScheme.onSurface
         else MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = spring(stiffness = 500f),
         label = "navIconColor"
     )
     val indicatorWidth by animateDpAsState(
-        targetValue = if (selected) 34.dp else 0.dp,
+        targetValue = if (selected) 28.dp else 0.dp,
         animationSpec = spring(stiffness = 420f, dampingRatio = 0.78f),
         label = "navIndicatorWidth"
     )
@@ -161,7 +149,7 @@ private fun NavItem(
                 onClick = onClick
             )
             .testTag(tag)
-            .padding(horizontal = 9.dp, vertical = 7.dp),
+            .padding(horizontal = 10.dp, vertical = 7.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -182,9 +170,9 @@ private fun NavItem(
         Spacer(Modifier.height(3.dp))
         Box(
             modifier = Modifier
-                .size(width = indicatorWidth, height = 3.dp)
+                .size(width = indicatorWidth, height = 2.dp)
                 .clip(CircleShape)
-                .background(if (selected) iconColor else Color.Transparent)
+                .background(iconColor)
         )
     }
 }
