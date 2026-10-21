@@ -122,20 +122,20 @@ fun ScanningScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 24.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Main Scanner Document Window with animated horizontal scanning laser beam
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .weight(if (extractedText != null) 0.9f else 1f)
                     .widthIn(max = 520.dp)
                     .testTag("scanning_view_card"),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF111111)
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 ),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
@@ -202,8 +202,50 @@ fun ScanningScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
+            if (extractedText != null) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth().weight(1.1f).widthIn(max = 520.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Extracted text", style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                TextButton(onClick = { copyExtractedText() }) {
+                                    Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Copy")
+                                }
+                                TextButton(onClick = { shareExtractedText() }) {
+                                    Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Share")
+                                }
+                            }
+                        }
+                        if (extractedText.isBlank()) {
+                            Text("No text was detected in this image.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            Text(
+                                text = extractedText,
+                                modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            } else {
             // Bottom Progress & Status Section
             Surface(
                 modifier = Modifier
@@ -314,7 +356,7 @@ fun ScanningScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     }
 }
