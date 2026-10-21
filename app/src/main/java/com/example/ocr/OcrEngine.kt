@@ -26,7 +26,7 @@ data class OcrResult(
     val lineCount: Int,
     val confidenceNote: String = "",
     val languageDetected: String = "Auto-detected",
-    val isAiModel: Boolean = true
+    val isAiModel: Boolean = false
 )
 
 object OcrEngine {
@@ -79,7 +79,12 @@ Analyze the provided image and extract all readable text according to these stri
 9. If no readable text exists in the image, set hasText to false and extractedText to empty string.
 """
 
-    suspend fun recognizeText(bitmap: Bitmap): OcrResult {
+    /** Default OCR path: runs entirely on-device and works without network access. */
+    suspend fun recognizeText(bitmap: Bitmap): OcrResult =
+        recognizeWithMlKit(bitmap, "Processed on this device. No internet connection required.")
+
+    /** Optional cloud AI OCR path. Call only after the user explicitly chooses cloud processing. */
+    suspend fun recognizeTextWithAi(bitmap: Bitmap): OcrResult {
         // Attempt Gemini 3.8 Flash extraction first
         try {
             Log.d(TAG, "Starting Gemini 3.8 Flash multimodal text extraction...")
