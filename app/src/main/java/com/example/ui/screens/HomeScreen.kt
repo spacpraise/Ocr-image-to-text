@@ -125,7 +125,7 @@ fun HomeScreen(
                             text = "Image To",
                             style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp),
                             fontWeight = FontWeight.Bold,
-                            color = TextBlack
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Text",
@@ -143,14 +143,14 @@ fun HomeScreen(
                             Icon(
                                 imageVector = Icons.Outlined.MoreVert,
                                 contentDescription = "More Options",
-                                tint = TextBlack
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(Color.White)
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Settings", color = TextBlack) },
@@ -203,8 +203,8 @@ fun HomeScreen(
                     CategoryItemCard(
                         title = "Image",
                         icon = Icons.Outlined.Image,
-                        badgeBg = BadgeBlueBg,
-                        iconTint = BadgeBlueIcon,
+                        badgeBg = MaterialTheme.colorScheme.surfaceVariant,
+                        iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
                         testTag = "category_image",
                         onClick = onExtractTextClick
@@ -213,8 +213,8 @@ fun HomeScreen(
                     CategoryItemCard(
                         title = "Certificate",
                         icon = Icons.Outlined.WorkspacePremium,
-                        badgeBg = BadgePeachBg,
-                        iconTint = BadgePeachIcon,
+                        badgeBg = MaterialTheme.colorScheme.surfaceVariant,
+                        iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
                         testTag = "category_certificate",
                         onClick = { onSampleSelect(SampleDocumentType.CONTRACT) }
@@ -223,8 +223,8 @@ fun HomeScreen(
                     CategoryItemCard(
                         title = "Book",
                         icon = Icons.Outlined.AutoStories,
-                        badgeBg = BadgeGreenBg,
-                        iconTint = BadgeGreenIcon,
+                        badgeBg = MaterialTheme.colorScheme.surfaceVariant,
+                        iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
                         testTag = "category_book",
                         onClick = { onSampleSelect(SampleDocumentType.MEETING_NOTES) }
@@ -233,8 +233,8 @@ fun HomeScreen(
                     CategoryItemCard(
                         title = "Receipt",
                         icon = Icons.Outlined.ReceiptLong,
-                        badgeBg = BadgePurpleBg,
-                        iconTint = BadgePurpleIcon,
+                        badgeBg = MaterialTheme.colorScheme.surfaceVariant,
+                        iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
                         testTag = "category_receipt",
                         onClick = { onSampleSelect(SampleDocumentType.INVOICE) }
@@ -252,9 +252,9 @@ fun HomeScreen(
                     .testTag("home_hero_card"),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
-                border = BorderStroke(1.2.dp, BorderSubtle)
+                border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Column(
                     modifier = Modifier
@@ -274,7 +274,7 @@ fun HomeScreen(
                     Text(
                         text = "Extract readable, editable text accurately with AI.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -288,14 +288,14 @@ fun HomeScreen(
                             .testTag("extract_text_button"),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = PureBlack,
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.CameraAlt,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
@@ -321,9 +321,9 @@ fun HomeScreen(
                                 .height(46.dp)
                                 .testTag("take_photo_action"),
                             shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, BorderSubtle),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = TextBlack
+                                contentColor = MaterialTheme.colorScheme.onSurface
                             )
                         ) {
                             Icon(
@@ -401,7 +401,7 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = null,
-                            tint = TextSecondary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
                         )
                     }
@@ -495,7 +495,7 @@ private fun CategoryItemCard(
             .clickable(onClick = onClick)
             .testTag(testTag),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, BorderSubtle)
     ) {
         Column(
@@ -623,7 +623,7 @@ fun RecentScanCard(
                     Text(
                         text = "•",
                         style = MaterialTheme.typography.labelSmall,
-                        color = BorderSubtle
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
                     Text(
                         text = "${scan.characterCount} chars",
