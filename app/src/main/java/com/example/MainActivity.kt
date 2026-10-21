@@ -221,13 +221,28 @@ fun SnapTextApp(
                 }
 
                 is Screen.Scanning -> {
-                    ScanningScreen(
-                        bitmap = selectedBitmap,
-                        statusMessage = scanStatusMessage,
-                        error = scanError,
-                        onRetry = { viewModel.retryScanning(context) },
-                        onBack = { viewModel.handleBack() }
-                    )
+                    if (!isScanning && extractedResult != null && scanError == null) {
+                        ResultScreen(
+                            originalBitmap = selectedBitmap,
+                            ocrResult = extractedResult,
+                            editableText = editableText,
+                            isEditMode = isEditMode,
+                            onToggleEditMode = { viewModel.toggleEditMode() },
+                            onTextChange = { viewModel.onTextEdited(it) },
+                            onSaveEdits = { viewModel.saveEditsToHistory() },
+                            onScanAnother = { showImageSourceSheet = true },
+                            onDeleteScan = { viewModel.deleteCurrentScan() },
+                            onBack = { viewModel.handleBack() }
+                        )
+                    } else {
+                        ScanningScreen(
+                            bitmap = selectedBitmap,
+                            statusMessage = scanStatusMessage,
+                            error = scanError,
+                            onRetry = { viewModel.retryScanning(context) },
+                            onBack = { viewModel.handleBack() }
+                        )
+                    }
                 }
 
                 is Screen.Result -> {
