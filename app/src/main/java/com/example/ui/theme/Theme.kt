@@ -12,12 +12,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = MintGreen,
+    primary = Color.White,
     onPrimary = Color.Black,
-    primaryContainer = MintGreenDark,
+    primaryContainer = Color(0xFF292929),
     onPrimaryContainer = Color.White,
-    secondary = PureBlack,
-    onSecondary = Color.White,
+    secondary = Color.White,
+    onSecondary = Color.Black,
+    error = Color(0xFFF5F5F5),
+    onError = Color.Black,
+    errorContainer = Color(0xFF292929),
+    onErrorContainer = Color.White,
     background = DarkBackground,
     onBackground = DarkTextPrimary,
     surface = DarkSurface,
@@ -25,24 +29,28 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = DarkSurfaceSubtle,
     onSurfaceVariant = DarkTextSecondary,
     outline = DarkBorder,
-    outlineVariant = Color(0xFF28303A)
+    outlineVariant = Color(0xFF292929)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = MintGreen,
+    primary = Color(0xFF111111),
     onPrimary = Color.White,
-    primaryContainer = MintGreenLight,
-    onPrimaryContainer = MintGreenDark,
-    secondary = PureBlack,
+    primaryContainer = Color(0xFFF0F0F0),
+    onPrimaryContainer = Color(0xFF111111),
+    secondary = Color(0xFF111111),
     onSecondary = Color.White,
-    background = BackgroundMinimal,
-    onBackground = TextBlack,
-    surface = SurfaceWhite,
-    onSurface = TextBlack,
-    surfaceVariant = SurfaceSubtle,
-    onSurfaceVariant = TextSecondary,
-    outline = BorderSubtle,
-    outlineVariant = BorderLight
+    error = Color(0xFF222222),
+    onError = Color.White,
+    errorContainer = Color(0xFFEFEFEF),
+    onErrorContainer = Color(0xFF111111),
+    background = Color.White,
+    onBackground = Color(0xFF111111),
+    surface = Color.White,
+    onSurface = Color(0xFF111111),
+    surfaceVariant = Color(0xFFF4F4F4),
+    onSurfaceVariant = Color(0xFF666666),
+    outline = Color(0xFFE1E1E1),
+    outlineVariant = Color(0xFFEFEFEF)
 )
 
 @Composable
