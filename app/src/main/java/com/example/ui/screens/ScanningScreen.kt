@@ -93,7 +93,7 @@ fun ScanningScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Scanning Document",
+                        text = "Scanning",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -135,7 +135,7 @@ fun ScanningScreen(
                     .testTag("scanning_view_card"),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.Black
+                    containerColor = Color(0xFF111111)
                 ),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
@@ -170,7 +170,7 @@ fun ScanningScreen(
                             val glowBrush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    ScanBeamCyan.copy(alpha = 0.35f),
+                                    Color.White.copy(alpha = 0.14f),
                                     Color.Transparent
                                 ),
                                 startY = beamY - glowHeight / 2,
@@ -185,9 +185,9 @@ fun ScanningScreen(
                             // Bright sharp cyan beam
                             val beamBrush = Brush.horizontalGradient(
                                 colors = listOf(
-                                    ScanBeamCyan.copy(alpha = 0.2f),
+                                    Color.White.copy(alpha = 0.2f),
                                     Color.White,
-                                    ScanBeamCyan,
+                                    Color.White,
                                     Color.White,
                                     ScanBeamCyan.copy(alpha = 0.2f)
                                 )
@@ -228,14 +228,14 @@ fun ScanningScreen(
                             Icon(
                                 imageVector = Icons.Filled.ErrorOutline,
                                 contentDescription = null,
-                                tint = DangerRed,
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
                                 text = "Scan Failed",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = DangerRed
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
@@ -258,7 +258,7 @@ fun ScanningScreen(
                                 .testTag("scanning_retry_button"),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = PrimaryBlue,
+                                containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = Color.White
                             )
                         ) {
@@ -281,7 +281,7 @@ fun ScanningScreen(
                         ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
-                                color = PrimaryBlue,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 strokeWidth = 2.5.dp
                             )
                             Text(
