@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.data.AccountSessionManager
 import com.example.data.SnapTextAccount
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.os.Bundle
 import android.widget.Toast
@@ -27,11 +28,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -116,6 +119,52 @@ fun SnapTextApp(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val sessionManager = remember(context) { AccountSessionManager(context) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val accountScope = rememberCoroutineScope()
+    var connectedAccount by remember { mutableStateOf<SnapTextAccount?>(null) }
+    var accountBusy by remember { mutableStateOf(false) }
+
+    fun openAccountWebsite(path: String) {
+        val uri = Uri.parse(AccountSessionManager.WEBSITE_URL + path)
+        runCatching { CustomTabsIntent.Builder().build().launchUrl(context, uri) }
+            .onFailure { Toast.makeText(context, "Could not open the account website.", Toast.LENGTH_LONG).show() }
+    }
+
+    LaunchedEffect(Unit) {
+        runCatching { withContext(Dispatchers.IO) { sessionManager.refreshAccount() } }
+            .onSuccess { connectedAccount = it }
+            .onFailure { connectedAccount = null }
+    }
+
+    LaunchedEffect(incomingAuthCode) {
+        val code = incomingAuthCode ?: return@LaunchedEffect
+        accountBusy = true
+        try {
+            connectedAccount = withContext(Dispatchers.IO) { sessionManager.exchangeCode(code) }
+            Toast.makeText(context, "SnapText account connected securely.", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, e.message ?: "Could not connect your account.", Toast.LENGTH_LONG).show()
+        } finally {
+            accountBusy = false
+            onAuthCodeHandled()
+        }
+    }
+
+    DisposableEffect(lifecycleOwner, sessionManager) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                accountScope.launch {
+                    runCatching { withContext(Dispatchers.IO) { sessionManager.refreshAccount() } }
+                        .onSuccess { connectedAccount = it }
+                        .onFailure { connectedAccount = null }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     LaunchedEffect(incomingShareIntent) {
         val sharedIntent = incomingShareIntent
         if (sharedIntent != null) {
@@ -328,6 +377,8 @@ fun SnapTextApp(
                         onClearAllScans = { viewModel.clearAllScans() },
                         onBack = { viewModel.handleBack() },
                         onUpgradeClick = { showPremiumSheet = true },
+                        displayName = connectedAccount?.name,
+                        email = connectedAccount?.email,
                         onAccountClick = { viewModel.navigateTo(Screen.Account) },
                         onHistoryClick = { viewModel.navigateTo(Screen.History) },
                         onPrivacyClick = { Toast.makeText(context, "Privacy policy will be available on the website.", Toast.LENGTH_SHORT).show() },
@@ -337,14 +388,23 @@ fun SnapTextApp(
 
                 is Screen.Account -> {
                     AccountScreen(
-                        displayName = null,
-                        email = null,
+                        displayName = connectedAccount?.name,
+                        email = connectedAccount?.email,
                         onBack = { viewModel.handleBack() },
-                        onUpgradeClick = { showPremiumSheet = true },
-                        onSignInMethodClick = { Toast.makeText(context, "Account sign-in management is not connected yet.", Toast.LENGTH_SHORT).show() },
-                        onChangePasswordClick = { Toast.makeText(context, "Change password is managed from the account website.", Toast.LENGTH_SHORT).show() },
-                        onSignOutClick = { Toast.makeText(context, "No signed-in website account is connected to this app yet.", Toast.LENGTH_SHORT).show() },
-                        onDeleteAccountClick = { Toast.makeText(context, "Account deletion is not connected yet.", Toast.LENGTH_SHORT).show() }
+                        onUpgradeClick = { openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account/billing") },
+                        onSignInMethodClick = { openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account") },
+                        onChangePasswordClick = { openAccountWebsite("/forgot-password") },
+                        onSignOutClick = {
+                            accountBusy = true
+                            accountScope.launch {
+                                withContext(Dispatchers.IO) { sessionManager.signOut() }
+                                connectedAccount = null
+                                accountBusy = false
+                                Toast.makeText(context, "Signed out of SnapText.", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onDeleteAccountClick = { openAccountWebsite("/account") },
+                        currentPlan = connectedAccount?.plan ?: "free"
                     )
                 }
 
