@@ -68,6 +68,17 @@ android {
     includeInApk = false
     includeInBundle = true
   }
+  packaging {
+    resources {
+      // PdfBox-Android ships some LGPL font/license metadata files that collide across
+      // dependencies; excluding them avoids duplicate-file packaging failures.
+      excludes += "META-INF/DEPENDENCIES"
+      excludes += "META-INF/LICENSE"
+      excludes += "META-INF/LICENSE.txt"
+      excludes += "META-INF/NOTICE"
+      excludes += "META-INF/NOTICE.txt"
+    }
+  }
 }
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
@@ -127,6 +138,10 @@ dependencies {
   implementation(libs.okhttp)
   // implementation(libs.play.services.location)
   implementation(libs.retrofit)
+  // PDF rendering (page -> bitmap) is handled by Android's built-in android.graphics.pdf.PdfRenderer,
+  // no dependency needed for that. PdfBox-Android below is used only to pull positioned native text
+  // (word bounding boxes) from born-digital PDF pages, with ML Kit OCR as the fallback for scanned pages.
+  implementation("com.tom-roush:pdfbox-android:2.0.27.0")
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)
