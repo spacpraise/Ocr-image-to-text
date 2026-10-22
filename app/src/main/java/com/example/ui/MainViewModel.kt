@@ -39,6 +39,7 @@ sealed interface Screen {
     object Home : Screen
     object History : Screen
     object Settings : Screen
+    object Account : Screen
     object ImagePreview : Screen
     object Scanning : Screen
 }
