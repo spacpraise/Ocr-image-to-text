@@ -1,6 +1,7 @@
 package com.example.data
 
 import android.content.Context
+import android.net.Uri
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -10,6 +11,8 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.security.KeyStore
+import java.security.MessageDigest
+import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -33,6 +36,7 @@ class AccountSessionManager(context: Context) {
     companion object {
         const val WEBSITE_URL = "https://snaptext-pearl.vercel.app"
         private const val PREF_TOKEN = "encrypted_app_session"
+        private const val PREF_PENDING_VERIFIER = "encrypted_pending_verifier"
         private const val KEY_ALIAS = "snaptext_account_session_key"
         private const val KEYSTORE = "AndroidKeyStore"
     }
@@ -50,12 +54,29 @@ class AccountSessionManager(context: Context) {
         prefs.edit().remove(PREF_TOKEN).apply()
     }
 
+    fun createConnectionUrl(): String {
+        val random = ByteArray(32).also { SecureRandom().nextBytes(it) }
+        val verifier = Base64.encodeToString(random, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+        val challenge = Base64.encodeToString(
+            MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII)),
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+        )
+        prefs.edit().putString(PREF_PENDING_VERIFIER, encrypt(verifier)).apply()
+        return Uri.parse("$WEBSITE_URL/app-connect").buildUpon()
+            .appendQueryParameter("challenge", challenge)
+            .build().toString()
+    }
+
     fun exchangeCode(code: String): SnapTextAccount {
-        val body = JSONObject().put("code", code).toString().toRequestBody(jsonType)
+        val encodedVerifier = prefs.getString(PREF_PENDING_VERIFIER, null)
+            ?: throw IllegalStateException("Start the connection from the SnapText app and try again.")
+        val verifier = decrypt(encodedVerifier)
+        val body = JSONObject().put("code", code).put("verifier", verifier).toString().toRequestBody(jsonType)
         val request = Request.Builder().url("$WEBSITE_URL/api/app-session/exchange").post(body).build()
         val json = executeJson(request)
         val token = json.getString("token")
         saveToken(token)
+        prefs.edit().remove(PREF_PENDING_VERIFIER).apply()
         return accountFrom(json)
     }
 
