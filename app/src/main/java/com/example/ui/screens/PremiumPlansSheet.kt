@@ -82,6 +82,8 @@ fun UsageSummaryCard(
     modifier: Modifier = Modifier
 ) {
     val isPremium = planName.equals("Premium", ignoreCase = true) || planName.equals("Lifetime", ignoreCase = true)
+    val effectiveImageLimit = if (isPremium) null else imageLimit
+    val effectivePdfLimit = if (isPremium) null else pdfLimit
     val accent = if (isPremium) MaterialTheme.colorScheme.primary else UpgradePink
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -120,10 +122,10 @@ fun UsageSummaryCard(
                     UpgradeButton(onClick = onUpgradeClick)
                 }
             }
-            UsageMetric("Image conversions", imagesUsed, imageLimit) {
+            UsageMetric("Image conversions", imagesUsed, effectiveImageLimit) {
                 Icon(Icons.Outlined.Image, contentDescription = null, tint = accent)
             }
-            UsageMetric("PDF documents", pdfsUsed, pdfLimit) {
+            UsageMetric("PDF documents", pdfsUsed, effectivePdfLimit) {
                 Icon(Icons.Outlined.PictureAsPdf, contentDescription = null, tint = accent)
             }
             if (!isPremium) {
