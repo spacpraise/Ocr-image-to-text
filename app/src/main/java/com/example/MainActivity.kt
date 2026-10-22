@@ -40,8 +40,10 @@ import com.example.ui.screens.HistoryScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.ImagePreviewScreen
 import com.example.ui.screens.OnboardingScreen
+import com.example.ui.screens.PremiumPlansSheet
 import com.example.ui.screens.ScanningScreen
 import com.example.ui.screens.SettingsScreen
+import com.example.ui.screens.SubscriptionPlan
 import com.example.ui.theme.SnapTextTheme
 import com.example.util.configureAppCheck
 import java.io.File
@@ -77,6 +79,20 @@ class MainActivity : ComponentActivity() {
                     onShareIntentHandled = { incomingShareIntent = null }
                 )
             }
+        }
+
+        if (showPremiumSheet) {
+            PremiumPlansSheet(
+                onDismiss = { showPremiumSheet = false },
+                onContinue = { selectedPlan: SubscriptionPlan ->
+                    showPremiumSheet = false
+                    Toast.makeText(
+                        context,
+                        "${selectedPlan.title} selected. Website checkout will be connected next.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            )
         }
     }
 }
@@ -142,6 +158,7 @@ fun SnapTextApp(
     val docImportError by viewModel.docImportError.collectAsState()
 
     var showImageSourceSheet by remember { mutableStateOf(false) }
+    var showPremiumSheet by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
     LaunchedEffect(docImportError) {
@@ -276,7 +293,8 @@ fun SnapTextApp(
                             viewModel.reopenScan(scan, context)
                         },
                         onViewAllScans = { viewModel.navigateTo(Screen.History) },
-                        onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) }
+                        onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
+                        onUpgradeClick = { showPremiumSheet = true }
                     )
                 }
 
@@ -287,7 +305,8 @@ fun SnapTextApp(
                         onSearchQueryChange = { viewModel.setSearchQuery(it) },
                         onReopenScan = { scan -> viewModel.reopenScan(scan, context) },
                         onDeleteScan = { scan -> viewModel.deleteScan(scan) },
-                        onBack = { viewModel.handleBack() }
+                        onBack = { viewModel.handleBack() },
+                        onUpgradeClick = { showPremiumSheet = true }
                     )
                 }
 
@@ -297,7 +316,8 @@ fun SnapTextApp(
                         onThemeSelect = { viewModel.setThemeMode(it) },
                         storageInfo = storageInfo,
                         onClearAllScans = { viewModel.clearAllScans() },
-                        onBack = { viewModel.handleBack() }
+                        onBack = { viewModel.handleBack() },
+                        onUpgradeClick = { showPremiumSheet = true }
                     )
                 }
 
