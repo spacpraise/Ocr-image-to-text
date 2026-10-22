@@ -58,7 +58,7 @@ enum class SubscriptionPlan(val title: String, val price: String, val billing: S
 }
 
 @Composable
-fun UpgradeButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun UpgradeButton(onClick: () -> Unit, modifier: Modifier = Modifier, label: String = "Upgrade") {
     Button(
         onClick = onClick,
         modifier = modifier.testTag("upgrade_button"),
@@ -67,7 +67,7 @@ fun UpgradeButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         Icon(Icons.Outlined.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
         Spacer(Modifier.size(6.dp))
-        Text("Upgrade", fontWeight = FontWeight.Bold)
+        Text(label, fontWeight = FontWeight.Bold)
     }
 }
 
