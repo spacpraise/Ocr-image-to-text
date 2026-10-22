@@ -354,7 +354,8 @@ fun SnapTextApp(
                         },
                         onViewAllScans = { viewModel.navigateTo(Screen.History) },
                         onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
-                        onUpgradeClick = { showPremiumSheet = true }
+                        onUpgradeClick = { openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account/billing") },
+                        planName = if (connectedAccount?.plan != null && connectedAccount?.plan != "free") "Premium" else "Free"
                     )
                 }
 
@@ -376,7 +377,7 @@ fun SnapTextApp(
                         storageInfo = storageInfo,
                         onClearAllScans = { viewModel.clearAllScans() },
                         onBack = { viewModel.handleBack() },
-                        onUpgradeClick = { showPremiumSheet = true },
+                        onUpgradeClick = { openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account/billing") },
                         displayName = connectedAccount?.name,
                         email = connectedAccount?.email,
                         onAccountClick = { viewModel.navigateTo(Screen.Account) },
