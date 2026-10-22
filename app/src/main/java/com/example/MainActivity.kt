@@ -81,19 +81,6 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        if (showPremiumSheet) {
-            PremiumPlansSheet(
-                onDismiss = { showPremiumSheet = false },
-                onContinue = { selectedPlan: SubscriptionPlan ->
-                    showPremiumSheet = false
-                    Toast.makeText(
-                        context,
-                        "${selectedPlan.title} selected. Website checkout will be connected next.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            )
-        }
     }
 }
 
@@ -364,5 +351,19 @@ fun SnapTextApp(
                 }
             )
         }
+        if (showPremiumSheet) {
+            PremiumPlansSheet(
+                onDismiss = { showPremiumSheet = false },
+                onContinue = { selectedPlan: SubscriptionPlan ->
+                    showPremiumSheet = false
+                    Toast.makeText(
+                        context,
+                        "${selectedPlan.title} selected. Website checkout will be connected next.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            )
+        }
+
     }
 }
