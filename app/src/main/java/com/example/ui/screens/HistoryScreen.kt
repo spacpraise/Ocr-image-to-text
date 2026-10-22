@@ -442,7 +442,7 @@ private fun HistoryScanCard(
                     Icon(
                         imageVector = Icons.Filled.DeleteOutline,
                         contentDescription = "Delete scan",
-                        tint = DangerRed.copy(alpha = 0.8f),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
                 }
