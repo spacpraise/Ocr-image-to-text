@@ -79,6 +79,7 @@ fun HomeScreen(
     onViewAllScans: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onUpgradeClick: () -> Unit = {},
+    planName: String = "Free",
     modifier: Modifier = Modifier
 ) {
 
@@ -122,7 +123,7 @@ fun HomeScreen(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        UpgradeButton(onClick = onUpgradeClick)
+                        UpgradeButton(onClick = onUpgradeClick, label = if (planName.equals("Premium", true) || planName.equals("Lifetime", true)) "Premium" else "Upgrade")
                         IconButton(
                             onClick = onNavigateToSettings,
                             modifier = Modifier.testTag("home_settings_button")
