@@ -37,6 +37,7 @@ import com.example.ui.Screen
 import com.example.ui.components.AppBottomBar
 import com.example.ui.components.ImageSourceSheet
 import com.example.ui.screens.HistoryScreen
+import com.example.ui.screens.AccountScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.ImagePreviewScreen
 import com.example.ui.screens.OnboardingScreen
@@ -298,12 +299,29 @@ fun SnapTextApp(
 
                 is Screen.Settings -> {
                     SettingsScreen(
-                        currentTheme = AppThemeMode.SYSTEM,
+                        currentTheme = themeMode,
                         onThemeSelect = { viewModel.setThemeMode(it) },
                         storageInfo = storageInfo,
                         onClearAllScans = { viewModel.clearAllScans() },
                         onBack = { viewModel.handleBack() },
-                        onUpgradeClick = { showPremiumSheet = true }
+                        onUpgradeClick = { showPremiumSheet = true },
+                        onAccountClick = { viewModel.navigateTo(Screen.Account) },
+                        onHistoryClick = { viewModel.navigateTo(Screen.History) },
+                        onPrivacyClick = { Toast.makeText(context, "Privacy policy will be available on the website.", Toast.LENGTH_SHORT).show() },
+                        onHelpClick = { Toast.makeText(context, "Help and feedback will be available soon.", Toast.LENGTH_SHORT).show() }
+                    )
+                }
+
+                is Screen.Account -> {
+                    AccountScreen(
+                        displayName = null,
+                        email = null,
+                        onBack = { viewModel.handleBack() },
+                        onUpgradeClick = { showPremiumSheet = true },
+                        onSignInMethodClick = { Toast.makeText(context, "Account sign-in management is not connected yet.", Toast.LENGTH_SHORT).show() },
+                        onChangePasswordClick = { Toast.makeText(context, "Change password is managed from the account website.", Toast.LENGTH_SHORT).show() },
+                        onSignOutClick = { Toast.makeText(context, "No signed-in website account is connected to this app yet.", Toast.LENGTH_SHORT).show() },
+                        onDeleteAccountClick = { Toast.makeText(context, "Account deletion is not connected yet.", Toast.LENGTH_SHORT).show() }
                     )
                 }
 
