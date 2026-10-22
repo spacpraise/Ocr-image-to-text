@@ -119,6 +119,7 @@ fun ScanningScreen(
     }
 
     val currentPage = pages.getOrNull(pagerState.currentPage)
+    val pagerScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -173,7 +174,13 @@ fun ScanningScreen(
                 if (page != null) {
                     ScanPageContent(
                         page = page,
-                        onRetry = { onRetryPage(index) }
+                        onRetry = { onRetryPage(index) },
+                        onHorizontalSwipe = { direction ->
+                            val target = (pagerState.currentPage + direction).coerceIn(0, pages.lastIndex)
+                            if (target != pagerState.currentPage) {
+                                pagerScope.launch { pagerState.animateScrollToPage(target) }
+                            }
+                        }
                     )
                 }
             }
@@ -280,6 +287,7 @@ private fun PageThumbnailStrip(
 private fun ScanPageContent(
     page: ScanPage,
     onRetry: () -> Unit,
+    onHorizontalSwipe: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -323,6 +331,7 @@ private fun ScanPageContent(
                     ImageSelectableTextOverlay(
                         bitmap = page.bitmap,
                         words = result.words,
+                        onHorizontalSwipe = onHorizontalSwipe,
                         modifier = Modifier.weight(1f).fillMaxWidth()
                     )
                 } else if (page.bitmap != null) {
@@ -572,11 +581,14 @@ private fun ErrorCard(message: String, onRetry: () -> Unit, modifier: Modifier =
 private fun ImageSelectableTextOverlay(
     bitmap: android.graphics.Bitmap,
     words: List<OcrWord>,
+    onHorizontalSwipe: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var selectedIndices by remember(words) { mutableStateOf(setOf<Int>()) }
     var dragAnchorIndex by remember(words) { mutableStateOf<Int?>(null) }
+    var dragStart by remember { mutableStateOf<Offset?>(null) }
+    var pageSwipeHandled by remember { mutableStateOf(false) }
 
     fun wordsRectsInBox(boxWidthPx: Float, boxHeightPx: Float): List<androidx.compose.ui.geometry.Rect> {
         val bmpW = bitmap.width.toFloat()
@@ -638,11 +650,23 @@ private fun ImageSelectableTextOverlay(
                         .pointerInput(rects) {
                             detectDragGestures(
                                 onDragStart = { offset ->
+                                    dragStart = offset
+                                    pageSwipeHandled = false
                                     val idx = rects.indexOfFirst { it.contains(offset) }
                                     dragAnchorIndex = if (idx >= 0) idx else null
                                     selectedIndices = if (idx >= 0) setOf(idx) else emptySet()
                                 },
                                 onDrag = { change, _ ->
+                                    val start = dragStart
+                                    if (start != null && !pageSwipeHandled &&
+                                        kotlin.math.abs(change.position.x - start.x) > 64.dp.toPx() &&
+                                        kotlin.math.abs(change.position.x - start.x) > kotlin.math.abs(change.position.y - start.y)
+                                    ) {
+                                        pageSwipeHandled = true
+                                        dragAnchorIndex = null
+                                        onHorizontalSwipe(if (change.position.x < start.x) 1 else -1)
+                                    }
+                                    if (pageSwipeHandled) return@detectDragGestures
                                     val idx = rects.indexOfFirst { it.contains(change.position) }
                                     val anchor = dragAnchorIndex
                                     if (idx >= 0 && anchor != null) {
@@ -650,7 +674,11 @@ private fun ImageSelectableTextOverlay(
                                         selectedIndices = range.toSet()
                                     }
                                 },
-                                onDragEnd = { /* selection stays until cleared */ }
+                                onDragEnd = {
+                                    dragStart = null
+                                    pageSwipeHandled = false
+                                    /* selection stays until cleared */
+                                }
                             )
                         }
                 ) {
