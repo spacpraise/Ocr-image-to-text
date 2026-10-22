@@ -9,7 +9,9 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
 import java.io.File
 import java.io.FileOutputStream
@@ -24,6 +26,9 @@ data class ImageMetadata(
     val formattedSize: String,
     val format: String
 )
+
+/** Describes a PDF page's intrinsic size in PDF points (72pt = 1 inch), before rendering. */
+data class PdfPageSize(val widthPt: Float, val heightPt: Float)
 
 object ImageUtils {
 
@@ -67,6 +72,13 @@ object ImageUtils {
             null
         } finally {
             stagedFile?.delete()
+        }
+    }
+
+    /** Loads multiple images (e.g. from a multi-select gallery pick), skipping any that fail. */
+    fun loadBitmapsFromUris(context: Context, uris: List<Uri>, maxDimension: Int = 1800): List<Pair<Uri, Bitmap>> {
+        return uris.mapNotNull { uri ->
+            loadBitmapFromUri(context, uri, maxDimension)?.let { uri to it }
         }
     }
 
@@ -198,6 +210,86 @@ object ImageUtils {
             formattedSize = formattedSize,
             format = format
         )
+    }
+
+    // ---------------------------------------------------------------------
+    // PDF support: copy the shared PDF to a local cache file (PdfRenderer and
+    // PdfBox both need a seekable local file / ParcelFileDescriptor, not a
+    // content:// stream), then render pages to bitmaps on demand.
+    // ---------------------------------------------------------------------
+
+    /** Copies a PDF from a content:// (or file) Uri into app cache, returning the local file. */
+    fun stagePdfToCache(context: Context, uri: Uri): File? {
+        return try {
+            val outFile = File.createTempFile("doc-", ".pdf", context.cacheDir)
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                outFile.outputStream().buffered().use { output -> input.copyTo(output) }
+            } ?: return null
+            if (outFile.length() <= 0L) return null
+            outFile
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /** Opens a staged PDF file and reports its page count, or null if it can't be opened. */
+    fun getPdfPageCount(pdfFile: File): Int? {
+        return try {
+            ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                PdfRenderer(pfd).use { renderer -> renderer.pageCount }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * Renders a single PDF page (0-based [pageIndex]) to a bitmap at roughly [targetMaxDimension]
+     * pixels on its longest side, returning both the bitmap and the scale factor (pixels per PDF
+     * point) that was used, so callers can convert PDF-point coordinates (e.g. from PdfBox text
+     * extraction) into this bitmap's pixel space.
+     */
+    fun renderPdfPage(pdfFile: File, pageIndex: Int, targetMaxDimension: Int = 1800): Pair<Bitmap, Float>? {
+        return try {
+            ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                PdfRenderer(pfd).use { renderer ->
+                    if (pageIndex < 0 || pageIndex >= renderer.pageCount) return null
+                    renderer.openPage(pageIndex).use { page ->
+                        val scale = targetMaxDimension.toFloat() / maxOf(page.width, page.height)
+                        val width = (page.width * scale).toInt().coerceAtLeast(1)
+                        val height = (page.height * scale).toInt().coerceAtLeast(1)
+                        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                        // PdfRenderer draws transparent by default; fill white first so OCR
+                        // (and the visible preview) isn't working against a black background.
+                        Canvas(bitmap).drawColor(Color.WHITE)
+                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        bitmap to scale
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /** Reads a PDF page's intrinsic size in PDF points, without fully rendering it. */
+    fun getPdfPageSize(pdfFile: File, pageIndex: Int): PdfPageSize? {
+        return try {
+            ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                PdfRenderer(pfd).use { renderer ->
+                    if (pageIndex < 0 || pageIndex >= renderer.pageCount) return null
+                    renderer.openPage(pageIndex).use { page ->
+                        PdfPageSize(page.width.toFloat(), page.height.toFloat())
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     fun createSampleDocumentBitmap(type: SampleDocumentType): Bitmap {
