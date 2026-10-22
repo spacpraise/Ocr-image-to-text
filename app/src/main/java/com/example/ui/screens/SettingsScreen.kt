@@ -55,6 +55,7 @@ fun SettingsScreen(
     storageInfo: String,
     onClearAllScans: () -> Unit,
     onBack: () -> Unit,
+    onUpgradeClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
@@ -69,6 +70,9 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
                     )
+                },
+                actions = {
+                    UpgradeButton(onClick = onUpgradeClick, modifier = Modifier.padding(end = 8.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -87,6 +91,15 @@ fun SettingsScreen(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
+            UsageSummaryCard(
+                planName = "Free",
+                imagesUsed = 0,
+                imageLimit = 3,
+                pdfsUsed = 0,
+                pdfLimit = 0,
+                onUpgradeClick = onUpgradeClick
+            )
+
             Text(
                 text = "Keep it simple.",
                 style = MaterialTheme.typography.bodyLarge,
