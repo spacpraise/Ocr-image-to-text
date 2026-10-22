@@ -131,6 +131,16 @@ fun SnapTextApp(
             .onFailure { Toast.makeText(context, "Could not open the account website.", Toast.LENGTH_LONG).show() }
     }
 
+    fun handlePdfPicked(uri: Uri) {
+        val plan = connectedAccount?.plan
+        if (plan.isNullOrBlank() || plan == "free") {
+            Toast.makeText(context, "PDF conversion is a Premium feature. Upgrade to unlock unlimited PDF conversions.", Toast.LENGTH_LONG).show()
+            openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account/billing")
+            return
+        }
+        viewModel.onPdfPicked(uri, context)
+    }
+
     LaunchedEffect(Unit) {
         runCatching { withContext(Dispatchers.IO) { sessionManager.refreshAccount() } }
             .onSuccess { connectedAccount = it }
@@ -193,7 +203,7 @@ fun SnapTextApp(
                     "Could not open the shared file. Try sharing the PDF or image directly.",
                     Toast.LENGTH_LONG
                 ).show()
-                isPdf -> viewModel.onPdfPicked(sharedUri, context)
+                isPdf -> handlePdfPicked(sharedUri)
                 isImage -> viewModel.onImagePicked(sharedUri, context, autoScan = true)
                 else -> Toast.makeText(
                     context,
@@ -256,7 +266,7 @@ fun SnapTextApp(
         if (uri != null) {
             val mimeType = runCatching { context.contentResolver.getType(uri) }.getOrNull()
             if (mimeType == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
-                viewModel.onPdfPicked(uri, context)
+                handlePdfPicked(uri)
             } else {
                 viewModel.onUnsupportedDocumentPicked()
             }
