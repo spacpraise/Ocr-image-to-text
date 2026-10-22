@@ -205,6 +205,7 @@ fun SnapTextApp(
         }
     }
 
+    val themeMode by viewModel.themeMode.collectAsState()
     val currentScreen by viewModel.currentScreen.collectAsState()
     val recentScans by viewModel.recentScans.collectAsState()
     val allScans by viewModel.filteredScans.collectAsState()
