@@ -131,11 +131,20 @@ fun SnapTextApp(
             .onFailure { Toast.makeText(context, "Could not open the account website.", Toast.LENGTH_LONG).show() }
     }
 
+    fun openConnectWebsite() {
+        runCatching {
+            val uri = Uri.parse(sessionManager.createConnectionUrl())
+            CustomTabsIntent.Builder().build().launchUrl(context, uri)
+        }.onFailure {
+            Toast.makeText(context, "Could not start secure account connection.", Toast.LENGTH_LONG).show()
+        }
+    }
+
     fun handlePdfPicked(uri: Uri) {
         val plan = connectedAccount?.plan
         if (plan.isNullOrBlank() || plan == "free") {
             Toast.makeText(context, "PDF conversion is a Premium feature. Upgrade to unlock unlimited PDF conversions.", Toast.LENGTH_LONG).show()
-            openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account/billing")
+            if (connectedAccount == null) openConnectWebsite() else openAccountWebsite("/account/billing")
             return
         }
         viewModel.onPdfPicked(uri, context)
@@ -404,7 +413,7 @@ fun SnapTextApp(
                         email = connectedAccount?.email,
                         onBack = { viewModel.handleBack() },
                         onUpgradeClick = { openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account/billing") },
-                        onSignInMethodClick = { openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account") },
+                        onSignInMethodClick = { if (connectedAccount == null) openConnectWebsite() else openAccountWebsite("/account") },
                         onChangePasswordClick = { openAccountWebsite("/forgot-password") },
                         onSignOutClick = {
                             accountBusy = true
