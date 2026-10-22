@@ -5,6 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.data.AccountSessionManager
+import com.example.data.SnapTextAccount
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -52,11 +60,21 @@ import java.io.File
 class MainActivity : ComponentActivity() {
     var incomingShareIntent by mutableStateOf<Intent?>(null)
         private set
+    var incomingAuthCode by mutableStateOf<String?>(null)
+        private set
+
+    private fun readAuthCode(intent: Intent?) {
+        val uri = intent?.data
+        incomingAuthCode = if (uri?.scheme == "snaptext" && uri.host == "auth" && uri.path == "/callback") {
+            uri.getQueryParameter("code")
+        } else null
+    }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        incomingShareIntent = intent
+        incomingShareIntent = intent.takeIf { it.action == Intent.ACTION_SEND || it.action == Intent.ACTION_SEND_MULTIPLE }
+        readAuthCode(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +82,7 @@ class MainActivity : ComponentActivity() {
         // Configure App Check with launch intent before any UI or Firebase operations
         configureAppCheck(this, intent)
         incomingShareIntent = intent.takeIf { it.action == Intent.ACTION_SEND || it.action == Intent.ACTION_SEND_MULTIPLE }
+        readAuthCode(intent)
         enableEdgeToEdge()
         setContent {
             val viewModel: MainViewModel = viewModel()
@@ -77,7 +96,9 @@ class MainActivity : ComponentActivity() {
                 SnapTextApp(
                     viewModel = viewModel,
                     incomingShareIntent = incomingShareIntent,
-                    onShareIntentHandled = { incomingShareIntent = null }
+                    onShareIntentHandled = { incomingShareIntent = null },
+                    incomingAuthCode = incomingAuthCode,
+                    onAuthCodeHandled = { incomingAuthCode = null }
                 )
             }
         }
@@ -90,6 +111,8 @@ fun SnapTextApp(
     viewModel: MainViewModel,
     incomingShareIntent: Intent? = null,
     onShareIntentHandled: () -> Unit = {},
+    incomingAuthCode: String? = null,
+    onAuthCodeHandled: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
