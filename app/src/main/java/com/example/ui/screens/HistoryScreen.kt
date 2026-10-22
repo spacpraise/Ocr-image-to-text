@@ -85,6 +85,7 @@ fun HistoryScreen(
     onReopenScan: (ScanEntity) -> Unit,
     onDeleteScan: (ScanEntity) -> Unit,
     onBack: () -> Unit,
+    onUpgradeClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
@@ -113,6 +114,9 @@ fun HistoryScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 },
+                actions = {
+                    UpgradeButton(onClick = onUpgradeClick, modifier = Modifier.padding(end = 8.dp))
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
@@ -131,6 +135,17 @@ fun HistoryScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(8.dp))
+
+            UsageSummaryCard(
+                planName = "Free",
+                imagesUsed = 0,
+                imageLimit = 3,
+                pdfsUsed = 0,
+                pdfLimit = 0,
+                onUpgradeClick = onUpgradeClick
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Search Bar
             OutlinedTextField(
