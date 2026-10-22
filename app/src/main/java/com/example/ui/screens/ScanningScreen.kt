@@ -17,6 +17,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -106,7 +108,6 @@ fun ScanningScreen(
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
-    val context = LocalContext.current
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     val pagerState = rememberPagerState(initialPage = initialPageIndex.coerceIn(0, (pages.size - 1).coerceAtLeast(0))) {
@@ -181,9 +182,6 @@ fun ScanningScreen(
                 PageThumbnailStrip(
                     pages = pages,
                     currentIndex = pagerState.currentPage,
-                    onThumbnailClick = { idx ->
-                        context.let { /* scope capture only */ }
-                    },
                     pagerState = pagerState
                 )
             }
@@ -220,7 +218,6 @@ fun ScanningScreen(
 private fun PageThumbnailStrip(
     pages: List<ScanPage>,
     currentIndex: Int,
-    onThumbnailClick: (Int) -> Unit,
     pagerState: androidx.compose.foundation.pager.PagerState
 ) {
     val scope = rememberCoroutineScope()
@@ -240,12 +237,6 @@ private fun PageThumbnailStrip(
                         .size(48.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .then(
-                            if (selected) Modifier else Modifier
-                        )
-                        .pointerInput(idx) {
-                            detectDragGestures { _, _ -> }
-                        }
                         .testTag("page_thumb_$idx"),
                     contentAlignment = Alignment.Center
                 ) {
@@ -278,7 +269,7 @@ private fun PageThumbnailStrip(
                                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                 shape = RoundedCornerShape(8.dp)
                             )
-                            .clickableNoRipple {
+                            .clickable {
                                 scope.launch { pagerState.animateScrollToPage(idx) }
                             }
                     )
@@ -287,17 +278,6 @@ private fun PageThumbnailStrip(
         }
     }
 }
-
-// Small helper so the thumbnail tap target doesn't need an interaction-source import clutter here.
-@Composable
-private fun Modifier.border(width: androidx.compose.ui.unit.Dp, color: Color, shape: androidx.compose.ui.graphics.Shape): Modifier =
-    this.then(Modifier.border(width, color, shape))
-
-private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier = this.then(
-    Modifier.pointerInput(Unit) {
-        detectDragGestures(onDragStart = { onClick() }) { _, _ -> }
-    }
-)
 
 @Composable
 private fun ScanPageContent(
