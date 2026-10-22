@@ -51,7 +51,7 @@ class AccountSessionManager(context: Context) {
     }
 
     fun clearToken() {
-        prefs.edit().remove(PREF_TOKEN).apply()
+        prefs.edit().remove(PREF_TOKEN).remove(PREF_PENDING_VERIFIER).apply()
     }
 
     fun createConnectionUrl(): String {
