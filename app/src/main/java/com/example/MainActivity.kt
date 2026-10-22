@@ -107,19 +107,23 @@ fun SnapTextApp(
             }
             val isImage = declaredType?.startsWith("image/") == true ||
                 resolvedType?.startsWith("image/") == true
+            val isPdf = declaredType.equals("application/pdf", ignoreCase = true) ||
+                resolvedType.equals("application/pdf", ignoreCase = true) ||
+                sharedUri?.toString()?.substringBefore('?')?.endsWith(".pdf", ignoreCase = true) == true
 
             when {
                 sharedUri == null -> Toast.makeText(
                     context,
-                    "Could not open the shared image. Try sharing an image file directly.",
+                    "Could not open the shared file. Try sharing the PDF or image directly.",
                     Toast.LENGTH_LONG
                 ).show()
-                !isImage -> Toast.makeText(
+                isPdf -> viewModel.onPdfPicked(sharedUri, context)
+                isImage -> viewModel.onImagePicked(sharedUri, context, autoScan = true)
+                else -> Toast.makeText(
                     context,
-                    "This file type is not supported yet. Share an image such as JPG, PNG or WebP.",
+                    "This file type is not supported yet. Share a PDF or an image such as JPG, PNG or WebP.",
                     Toast.LENGTH_LONG
                 ).show()
-                else -> viewModel.onImagePicked(sharedUri, context, autoScan = true)
             }
             onShareIntentHandled()
         }
