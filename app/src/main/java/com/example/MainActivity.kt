@@ -374,7 +374,7 @@ fun SnapTextApp(
                         },
                         onViewAllScans = { viewModel.navigateTo(Screen.History) },
                         onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
-                        onUpgradeClick = { openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account/billing") },
+                        onUpgradeClick = { if (connectedAccount == null) openConnectWebsite() else openAccountWebsite("/account/billing") },
                         planName = if (connectedAccount?.plan != null && connectedAccount?.plan != "free") "Premium" else "Free"
                     )
                 }
