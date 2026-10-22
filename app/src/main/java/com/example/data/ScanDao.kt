@@ -19,6 +19,9 @@ interface ScanDao {
     @Query("SELECT * FROM scans WHERE id = :id")
     suspend fun getScanById(id: Long): ScanEntity?
 
+    @Query("SELECT * FROM scans WHERE batchId = :batchId ORDER BY pageIndex ASC")
+    suspend fun getScansByBatchId(batchId: String): List<ScanEntity>
+
     @Query("SELECT * FROM scans WHERE title LIKE '%' || :query || '%' OR extractedText LIKE '%' || :query || '%' ORDER BY timestamp DESC")
     fun searchScans(query: String): Flow<List<ScanEntity>>
 
@@ -33,6 +36,9 @@ interface ScanDao {
 
     @Query("DELETE FROM scans WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM scans WHERE batchId = :batchId")
+    suspend fun deleteByBatchId(batchId: String)
 
     @Query("DELETE FROM scans")
     suspend fun deleteAllScans()
