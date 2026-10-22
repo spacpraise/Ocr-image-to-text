@@ -40,7 +40,6 @@ import com.example.ui.screens.HistoryScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.ImagePreviewScreen
 import com.example.ui.screens.OnboardingScreen
-import com.example.ui.screens.ResultScreen
 import com.example.ui.screens.ScanningScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.SnapTextTheme
@@ -73,10 +72,10 @@ class MainActivity : ComponentActivity() {
             }
             SnapTextTheme(darkTheme = resolvedDarkTheme) {
                 SnapTextApp(
-                viewModel = viewModel,
-                incomingShareIntent = incomingShareIntent,
-                onShareIntentHandled = { incomingShareIntent = null }
-            )
+                    viewModel = viewModel,
+                    incomingShareIntent = incomingShareIntent,
+                    onShareIntentHandled = { incomingShareIntent = null }
+                )
             }
         }
     }
@@ -131,25 +130,55 @@ fun SnapTextApp(
     val allScans by viewModel.filteredScans.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val storageInfo by viewModel.storageInfo.collectAsState()
-    val themeMode by viewModel.themeMode.collectAsState()
 
     val selectedBitmap by viewModel.selectedBitmap.collectAsState()
     val imageMetadata by viewModel.imageMetadata.collectAsState()
-    val isScanning by viewModel.isScanning.collectAsState()
-    val scanStatusMessage by viewModel.scanStatusMessage.collectAsState()
-    val scanError by viewModel.scanError.collectAsState()
-    val extractedResult by viewModel.extractedResult.collectAsState()
-    val editableText by viewModel.editableText.collectAsState()
-    val isEditMode by viewModel.isEditMode.collectAsState()
+    val pages by viewModel.pages.collectAsState()
+    val currentPageIndex by viewModel.currentPageIndex.collectAsState()
+    val docImportError by viewModel.docImportError.collectAsState()
 
     var showImageSourceSheet by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Modern zero-permission photo picker for Gallery
-    val galleryLauncher = rememberLauncherForActivityResult(
+    LaunchedEffect(docImportError) {
+        docImportError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearDocImportError()
+        }
+    }
+
+    // Single-image photo picker (used from ImagePreviewScreen's "Change" action, etc.)
+    val galleryLauncherSingle = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         uri?.let { viewModel.onImagePicked(it, context) }
+    }
+
+    // Multi-image photo picker (gallery entry point from the source sheet)
+    val galleryLauncherMultiple = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(20)
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            if (uris.size == 1) {
+                viewModel.onImagePicked(uris.first(), context)
+            } else {
+                viewModel.onImagesPicked(uris, context)
+            }
+        }
+    }
+
+    // Document (PDF) picker
+    val documentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val mimeType = runCatching { context.contentResolver.getType(uri) }.getOrNull()
+            if (mimeType == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
+                viewModel.onPdfPicked(uri, context)
+            } else {
+                viewModel.onUnsupportedDocumentPicked()
+            }
+        }
     }
 
     // Camera photo capture launcher with FileProvider URI
@@ -231,7 +260,7 @@ fun SnapTextApp(
                         recentScans = recentScans,
                         onExtractTextClick = { showImageSourceSheet = true },
                         onUploadImageClick = {
-                            galleryLauncher.launch(
+                            galleryLauncherMultiple.launch(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                             )
                         },
@@ -260,7 +289,7 @@ fun SnapTextApp(
 
                 is Screen.Settings -> {
                     SettingsScreen(
-                        currentTheme = themeMode,
+                        currentTheme = AppThemeMode.SYSTEM,
                         onThemeSelect = { viewModel.setThemeMode(it) },
                         storageInfo = storageInfo,
                         onClearAllScans = { viewModel.clearAllScans() },
@@ -282,26 +311,11 @@ fun SnapTextApp(
 
                 is Screen.Scanning -> {
                     ScanningScreen(
-                        bitmap = selectedBitmap,
-                        statusMessage = scanStatusMessage,
-                        error = scanError,
-                        extractedText = if (!isScanning && scanError == null) editableText else null,
-                        onRetry = { viewModel.retryScanning(context) },
-                        onBack = { viewModel.handleBack() }
-                    )
-                }
-
-                is Screen.Result -> {
-                    ResultScreen(
-                        originalBitmap = selectedBitmap,
-                        ocrResult = extractedResult,
-                        editableText = editableText,
-                        isEditMode = isEditMode,
-                        onToggleEditMode = { viewModel.toggleEditMode() },
-                        onTextChange = { viewModel.onTextEdited(it) },
-                        onSaveEdits = { viewModel.saveEditsToHistory() },
-                        onScanAnother = { showImageSourceSheet = true },
-                        onDeleteScan = { viewModel.deleteCurrentScan() },
+                        pages = pages,
+                        initialPageIndex = currentPageIndex,
+                        onPageFocused = { index -> viewModel.onPageFocused(index, context) },
+                        onRetryPage = { index -> viewModel.retryPage(index, context) },
+                        onDeleteCurrentPage = { viewModel.deleteCurrentPageScan(context) },
                         onBack = { viewModel.handleBack() }
                     )
                 }
@@ -314,9 +328,12 @@ fun SnapTextApp(
                 onDismiss = { showImageSourceSheet = false },
                 onCameraSelect = { checkAndLaunchCamera() },
                 onGallerySelect = {
-                    galleryLauncher.launch(
+                    galleryLauncherMultiple.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
+                },
+                onDocumentSelect = {
+                    documentLauncher.launch(arrayOf("application/pdf"))
                 },
                 onSampleSelect = {
                     viewModel.onSamplePicked(SampleDocumentType.CONTRACT, context)
