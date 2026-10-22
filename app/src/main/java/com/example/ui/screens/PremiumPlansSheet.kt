@@ -165,7 +165,7 @@ private fun UsageMetric(label: String, used: Int, limit: Int?, icon: @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PremiumPlansSheet(onDismiss: () -> Unit, onContinue: (SubscriptionPlan) -> Unit, currentPlan: String = "Free") {
-    var selectedPlan by remember { mutableStateOf(SubscriptionPlan.LIFETIME) }
+    var selectedPlan by remember { mutableStateOf(SubscriptionPlan.MONTHLY) }
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surface, dragHandle = null) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 28.dp),
@@ -181,9 +181,9 @@ fun PremiumPlansSheet(onDismiss: () -> Unit, onContinue: (SubscriptionPlan) -> U
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                PlanOption(SubscriptionPlan.MONTHLY, "Flexible access, billed monthly", selectedPlan == SubscriptionPlan.MONTHLY, false) { selectedPlan = SubscriptionPlan.MONTHLY }
-                PlanOption(SubscriptionPlan.YEARLY, "Save about 17% compared with monthly", selectedPlan == SubscriptionPlan.YEARLY, false) { selectedPlan = SubscriptionPlan.YEARLY }
-                PlanOption(SubscriptionPlan.LIFETIME, "Pay once. Keep Premium for life.", selectedPlan == SubscriptionPlan.LIFETIME, true) { selectedPlan = SubscriptionPlan.LIFETIME }
+                PlanOption(SubscriptionPlan.MONTHLY, "Flexible access, billed monthly", selectedPlan == SubscriptionPlan.MONTHLY) { selectedPlan = SubscriptionPlan.MONTHLY }
+                PlanOption(SubscriptionPlan.YEARLY, "Save about 17% compared with monthly", selectedPlan == SubscriptionPlan.YEARLY) { selectedPlan = SubscriptionPlan.YEARLY }
+                PlanOption(SubscriptionPlan.LIFETIME, "Pay once. Keep Premium for life.", selectedPlan == SubscriptionPlan.LIFETIME) { selectedPlan = SubscriptionPlan.LIFETIME }
             }
             Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -213,24 +213,19 @@ fun PremiumPlansSheet(onDismiss: () -> Unit, onContinue: (SubscriptionPlan) -> U
 }
 
 @Composable
-private fun PlanOption(plan: SubscriptionPlan, description: String, selected: Boolean, recommended: Boolean, onClick: () -> Unit) {
-    val borderColor = if (selected || recommended) UpgradePink else MaterialTheme.colorScheme.outlineVariant
+private fun PlanOption(plan: SubscriptionPlan, description: String, selected: Boolean, onClick: () -> Unit) {
+    val borderColor = if (selected) UpgradePink else MaterialTheme.colorScheme.outlineVariant
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).testTag("plan_${plan.name.lowercase()}"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = if (selected) UpgradePinkSoft.copy(alpha = 0.28f) else MaterialTheme.colorScheme.surface),
-        border = BorderStroke(if (selected || recommended) 1.5.dp else 1.dp, borderColor)
+        border = BorderStroke(if (selected) 2.dp else 1.dp, borderColor)
     ) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
             RadioButton(selected = selected, onClick = onClick)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     Text(plan.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    if (recommended) {
-                        Surface(color = UpgradePink, shape = RoundedCornerShape(50)) {
-                            Text("RECOMMENDED", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 9.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
-                        }
-                    }
                 }
                 Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
