@@ -47,7 +47,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
@@ -55,7 +54,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ocr.ImageMetadata
-import com.example.ui.theme.PrimaryBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -221,8 +219,8 @@ fun ImagePreviewScreen(
                             .testTag("scan_for_text_button"),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = com.example.ui.theme.PureBlack,
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         enabled = bitmap != null
                     ) {
@@ -323,7 +321,7 @@ private fun ImageEditActions(
             Icon(
                 imageVector = Icons.Filled.SwapHoriz,
                 contentDescription = null,
-                tint = PrimaryBlue,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
@@ -348,7 +346,7 @@ private fun ImageEditActions(
             Icon(
                 imageVector = Icons.Filled.Crop,
                 contentDescription = null,
-                tint = PrimaryBlue,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
@@ -373,7 +371,7 @@ private fun ImageEditActions(
             Icon(
                 imageVector = Icons.Filled.RotateRight,
                 contentDescription = null,
-                tint = PrimaryBlue,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
@@ -452,7 +450,7 @@ private fun MetadataCard(
                     text = "${metadata?.format ?: "JPEG"} • ${metadata?.formattedSize ?: "Direct"}",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
-                    color = PrimaryBlue
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
