@@ -189,8 +189,8 @@ fun PremiumPlansSheet(onDismiss: () -> Unit, onContinue: (SubscriptionPlan) -> U
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Every paid plan includes", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                     FeatureLine("Unlimited image conversions")
-                    FeatureLine("20 PDF documents per day")
-                    FeatureLine("PDF page and file safety limits apply")
+                    FeatureLine("Unlimited PDF conversions")
+                    FeatureLine("No daily conversion quotas")
                 }
             }
             Button(
