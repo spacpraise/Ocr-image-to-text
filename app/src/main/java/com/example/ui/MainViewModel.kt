@@ -513,9 +513,12 @@ fun deleteCurrentPageScan(context: Context) {
 
     fun deleteScan(scan: ScanEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            scanDao.deleteScan(scan)
-            scan.imagePath?.let { path -> try { File(path).delete() } catch (_: Exception) {} }
-            scan.thumbnailPath?.let { path -> try { File(path).delete() } catch (_: Exception) {} }
+            val pages = if (scan.batchId != null) scanDao.getScansByBatchId(scan.batchId) else listOf(scan)
+            if (scan.batchId != null) scanDao.deleteByBatchId(scan.batchId) else scanDao.deleteScan(scan)
+            pages.forEach { page ->
+                page.imagePath?.let { path -> try { File(path).delete() } catch (_: Exception) {} }
+                page.thumbnailPath?.let { path -> try { File(path).delete() } catch (_: Exception) {} }
+            }
             withContext(Dispatchers.Main) {
                 updateStorageInfo()
             }
