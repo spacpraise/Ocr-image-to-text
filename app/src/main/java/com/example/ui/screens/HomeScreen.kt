@@ -27,7 +27,6 @@ import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Settings
@@ -82,7 +81,6 @@ fun HomeScreen(
     onUpgradeClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var showMenu by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier
@@ -125,54 +123,15 @@ fun HomeScreen(
 
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         UpgradeButton(onClick = onUpgradeClick)
-                        Box {
                         IconButton(
-                            onClick = { showMenu = true },
-                            modifier = Modifier.testTag("home_more_menu_button")
+                            onClick = onNavigateToSettings,
+                            modifier = Modifier.testTag("home_settings_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.MoreVert,
-                                contentDescription = "More Options",
+                                imageVector = Icons.Outlined.Settings,
+                                contentDescription = "Settings",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
-                        }
-
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Settings", color = MaterialTheme.colorScheme.onSurface) },
-                                onClick = {
-                                    showMenu = false
-                                    onNavigateToSettings()
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Settings,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurface
-                                    )
-                                },
-                                modifier = Modifier.testTag("menu_item_settings")
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Scan History", color = MaterialTheme.colorScheme.onSurface) },
-                                onClick = {
-                                    showMenu = false
-                                    onViewAllScans()
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.History,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurface
-                                    )
-                                },
-                                modifier = Modifier.testTag("menu_item_history")
-                            )
-                        }
                         }
                     }
                 }
