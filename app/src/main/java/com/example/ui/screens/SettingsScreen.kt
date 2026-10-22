@@ -1,54 +1,32 @@
 package com.example.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BrightnessAuto
-import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.AppThemeMode
-import com.example.ui.theme.DangerRed
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     currentTheme: AppThemeMode,
@@ -59,242 +37,131 @@ fun SettingsScreen(
     onUpgradeClick: () -> Unit = {},
     displayName: String? = null,
     email: String? = null,
+    onAccountClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {},
+    onPrivacyClick: () -> Unit = {},
+    onHelpClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
-    var showClearConfirmation by remember { mutableStateOf(false) }
-
+    var showThemePicker by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = "Settings",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                actions = {
-                    UpgradeButton(onClick = onUpgradeClick, modifier = Modifier.padding(end = 8.dp))
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
+                title = { Text("Settings", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background, titleContentColor = MaterialTheme.colorScheme.onBackground)
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier
-    ) { innerPadding ->
+    ) { insets ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            Modifier.fillMaxSize().padding(insets).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
-            Text(
-                text = "Account",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth().testTag("settings_account_card"),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            Surface(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).clickable(onClick = onAccountClick).testTag("settings_account_card"),
+                shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(48.dp)) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Outlined.AccountCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-                        }
+                Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    ProfileAvatar(displayName, 58)
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(displayName?.takeIf { it.isNotBlank() } ?: "Your account", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(email?.takeIf { it.isNotBlank() } ?: "Manage your account", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Spacer(Modifier.width(14.dp))
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(displayName?.takeIf { it.isNotBlank() } ?: "Not signed in", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                        Text(email?.takeIf { it.isNotBlank() } ?: "Sign in on the account website to sync your account", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    Icon(Icons.Outlined.ChevronRight, contentDescription = "Open account", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
                 }
             }
-
-            Text("Usage", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
-            UsageSummaryCard(
-                planName = "Free", imagesUsed = 0, imageLimit = 3,
-                pdfsUsed = 0, pdfLimit = 0, onUpgradeClick = onUpgradeClick
-            )
-
-            Text(
-                text = "Keep it simple.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(42.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Outlined.BrightnessAuto,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Appearance",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(Modifier.height(3.dp))
-                        Text(
-                            text = "Follows your phone's light or dark mode",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                SectionLabel("PREFERENCES")
+                SettingsGroup {
+                    SettingsRow(Icons.Outlined.BrightnessAuto, "Appearance", themeLabel(currentTheme)) { showThemePicker = true }
+                    SettingsDivider()
+                    SettingsRow(Icons.Outlined.History, "History", null, onHistoryClick)
                 }
             }
-
-            Text(
-                text = "Storage",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Outlined.Storage,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Saved scans",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = storageInfo,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Button(
-                        onClick = { showClearConfirmation = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .testTag("clear_all_scans_button"),
-                        shape = RoundedCornerShape(13.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.DeleteOutline,
-                            contentDescription = null,
-                            modifier = Modifier.size(19.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Clear saved scans")
-                    }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                SectionLabel("ABOUT")
+                SettingsGroup {
+                    SettingsRow(Icons.Outlined.Info, "Version", "1.0") {}
+                    SettingsDivider()
+                    SettingsRow(Icons.Outlined.Shield, "Privacy Policy", null, onPrivacyClick)
+                    SettingsDivider()
+                    SettingsRow(Icons.Outlined.HelpOutline, "Help & feedback", null, onHelpClick)
                 }
             }
-
-            Text(
-                text = "Your scans are stored on this device.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 19.sp,
-                modifier = Modifier.padding(horizontal = 2.dp)
-            )
-
             Spacer(Modifier.height(12.dp))
         }
     }
-
-    if (showClearConfirmation) {
+    if (showThemePicker) {
         AlertDialog(
-            onDismissRequest = { showClearConfirmation = false },
-            title = {
-                Text(
-                    text = "Clear saved scans?",
-                    fontWeight = FontWeight.SemiBold
-                )
-            },
+            onDismissRequest = { showThemePicker = false },
+            title = { Text("Appearance", fontWeight = FontWeight.SemiBold) },
             text = {
-                Text("This removes your saved scan history from this device.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showClearConfirmation = false
-                        onClearAllScans()
-                    },
-                    modifier = Modifier.testTag("confirm_clear_all_button")
-                ) {
-                    Text("Clear", color = DangerRed)
+                Column {
+                    AppThemeMode.values().forEach { mode ->
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onThemeSelect(mode); showThemePicker = false }.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(themeLabel(mode), modifier = Modifier.weight(1f))
+                            if (currentTheme == mode) Text("✓", fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { showClearConfirmation = false },
-                    modifier = Modifier.testTag("dismiss_clear_all_button")
-                ) {
-                    Text("Cancel")
-                }
-            }
+            confirmButton = { TextButton(onClick = { showThemePicker = false }) { Text("Done") } }
         )
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
+}
+
+@Composable
+private fun SettingsGroup(content: @Composable ColumnScope.() -> Unit) {
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), elevation = CardDefaults.cardElevation(0.dp)) {
+        Column(content = content)
+    }
+}
+
+@Composable
+private fun SettingsDivider() {
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f), thickness = 1.dp)
+}
+
+@Composable
+private fun SettingsRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, trailing: String? = null, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 17.dp), verticalAlignment = Alignment.CenterVertically) {
+        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surface, modifier = Modifier.size(46.dp)) {
+            Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(23.dp)) }
+        }
+        Spacer(Modifier.width(14.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        if (trailing != null) {
+            Text(trailing, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(8.dp))
+        }
+        Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(26.dp))
+    }
+}
+
+private fun themeLabel(mode: AppThemeMode) = when (mode) {
+    AppThemeMode.SYSTEM -> "System"
+    AppThemeMode.LIGHT -> "Light"
+    AppThemeMode.DARK -> "Dark"
+}
+
+@Composable
+fun ProfileAvatar(name: String?, size: Int) {
+    val initials = name?.trim()?.split(Regex("\\s+"))?.filter { it.isNotBlank() }?.take(2)
+        ?.mapNotNull { it.firstOrNull()?.uppercaseChar() }?.joinToString("")?.takeIf { it.isNotBlank() } ?: "ST"
+    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(size.dp)) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(initials, color = MaterialTheme.colorScheme.surface, fontWeight = FontWeight.SemiBold, fontSize = (size * 0.28).sp)
+        }
     }
 }
