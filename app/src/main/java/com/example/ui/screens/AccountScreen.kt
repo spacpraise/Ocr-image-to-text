@@ -33,6 +33,7 @@ fun AccountScreen(
     onChangePasswordClick: () -> Unit,
     onSignOutClick: () -> Unit,
     onDeleteAccountClick: () -> Unit,
+    currentPlan: String = "free",
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
@@ -71,10 +72,10 @@ fun AccountScreen(
                 Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("CURRENT PLAN", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Free", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                        Text(planTitle(currentPlan), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                     }
                     Button(onClick = onUpgradeClick, shape = CircleShape, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface, contentColor = MaterialTheme.colorScheme.surface), contentPadding = PaddingValues(horizontal = 22.dp, vertical = 14.dp)) {
-                        Text("Explore Pro", fontWeight = FontWeight.SemiBold)
+                        Text(if (currentPlan == "free") "Explore Pro" else "Manage plan", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -136,4 +137,12 @@ private fun AccountRow(icon: androidx.compose.ui.graphics.vector.ImageVector, ti
         }
         Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(26.dp))
     }
+}
+
+
+private fun planTitle(plan: String): String = when (plan) {
+    "pro_monthly" -> "Premium"
+    "pro_yearly" -> "Premium"
+    "lifetime" -> "Premium"
+    else -> "Free"
 }
