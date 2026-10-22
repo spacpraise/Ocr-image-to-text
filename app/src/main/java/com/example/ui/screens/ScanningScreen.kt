@@ -248,9 +248,6 @@ private fun PageThumbnailStrip(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(RoundedCornerShape(8.dp))
-                                .then(
-                                    Modifier
-                                )
                         )
                     }
                     if (page.state == PageScanState.SCANNING) {
