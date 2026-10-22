@@ -79,6 +79,7 @@ fun HomeScreen(
     onReopenScan: (ScanEntity) -> Unit,
     onViewAllScans: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onUpgradeClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -173,6 +174,17 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+
+        item {
+            UsageSummaryCard(
+                planName = "Free",
+                imagesUsed = 0,
+                imageLimit = 3,
+                pdfsUsed = 0,
+                pdfLimit = 0,
+                onUpgradeClick = onUpgradeClick
+            )
         }
 
         // Minimalist Document Category Shelf directly matching screenshot
