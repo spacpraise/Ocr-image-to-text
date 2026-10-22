@@ -141,13 +141,18 @@ fun SnapTextApp(
     }
 
     fun handlePdfPicked(uri: Uri) {
-        val plan = connectedAccount?.plan
-        if (plan.isNullOrBlank() || plan == "free") {
-            Toast.makeText(context, "PDF conversion is a Premium feature. Upgrade to unlock unlimited PDF conversions.", Toast.LENGTH_LONG).show()
-            if (connectedAccount == null) openConnectWebsite() else openAccountWebsite("/account/billing")
-            return
+        accountScope.launch {
+            val account = connectedAccount ?: runCatching {
+                withContext(Dispatchers.IO) { sessionManager.refreshAccount() }
+            }.getOrNull()
+            connectedAccount = account
+            if (account?.plan.isNullOrBlank() || account?.plan == "free") {
+                Toast.makeText(context, "PDF conversion is a Premium feature. Upgrade to unlock unlimited PDF conversions.", Toast.LENGTH_LONG).show()
+                if (account == null) openConnectWebsite() else openAccountWebsite("/account/billing")
+                return@launch
+            }
+            viewModel.onPdfPicked(uri, context)
         }
-        viewModel.onPdfPicked(uri, context)
     }
 
     LaunchedEffect(Unit) {
