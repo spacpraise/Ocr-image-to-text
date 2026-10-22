@@ -64,19 +64,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.ScanEntity
 import com.example.ocr.SampleDocumentType
-import com.example.ui.theme.BadgeBlueBg
-import com.example.ui.theme.BadgeBlueIcon
-import com.example.ui.theme.BadgeGreenBg
-import com.example.ui.theme.BadgeGreenIcon
-import com.example.ui.theme.BadgePeachBg
-import com.example.ui.theme.BadgePeachIcon
-import com.example.ui.theme.BadgePurpleBg
-import com.example.ui.theme.BadgePurpleIcon
-import com.example.ui.theme.BorderSubtle
-import com.example.ui.theme.MintGreen
-import com.example.ui.theme.PureBlack
-import com.example.ui.theme.TextBlack
-import com.example.ui.theme.TextSecondary
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -131,7 +118,7 @@ fun HomeScreen(
                             text = "Text",
                             style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp),
                             fontWeight = FontWeight.Bold,
-                            color = TextBlack
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
@@ -153,7 +140,7 @@ fun HomeScreen(
                             modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Settings", color = TextBlack) },
+                                text = { Text("Settings", color = MaterialTheme.colorScheme.onSurface) },
                                 onClick = {
                                     showMenu = false
                                     onNavigateToSettings()
@@ -162,13 +149,13 @@ fun HomeScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.Settings,
                                         contentDescription = null,
-                                        tint = TextBlack
+                                        tint = MaterialTheme.colorScheme.onSurface
                                     )
                                 },
                                 modifier = Modifier.testTag("menu_item_settings")
                             )
                             DropdownMenuItem(
-                                text = { Text("Scan History", color = TextBlack) },
+                                text = { Text("Scan History", color = MaterialTheme.colorScheme.onSurface) },
                                 onClick = {
                                     showMenu = false
                                     onViewAllScans()
@@ -177,7 +164,7 @@ fun HomeScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.History,
                                         contentDescription = null,
-                                        tint = TextBlack
+                                        tint = MaterialTheme.colorScheme.onSurface
                                     )
                                 },
                                 modifier = Modifier.testTag("menu_item_history")
@@ -265,7 +252,7 @@ fun HomeScreen(
                         text = "Scan Text From\nImage or Camera",
                         style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
                         fontWeight = FontWeight.Bold,
-                        color = TextBlack,
+                        color = MaterialTheme.colorScheme.onSurface,
                         lineHeight = 26.sp
                     )
 
@@ -329,7 +316,7 @@ fun HomeScreen(
                             Icon(
                                 imageVector = Icons.Outlined.CameraAlt,
                                 contentDescription = null,
-                                tint = TextBlack,
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -347,15 +334,15 @@ fun HomeScreen(
                                 .height(46.dp)
                                 .testTag("upload_image_action"),
                             shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, BorderSubtle),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = TextBlack
+                                contentColor = MaterialTheme.colorScheme.onSurface
                             )
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Photo,
                                 contentDescription = null,
-                                tint = TextBlack,
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -383,7 +370,7 @@ fun HomeScreen(
                     text = "Recent Scans",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = TextBlack
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 if (recentScans.isNotEmpty()) {
@@ -394,7 +381,7 @@ fun HomeScreen(
                         Text(
                             text = "View All",
                             style = MaterialTheme.typography.labelMedium,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -419,9 +406,9 @@ fun HomeScreen(
                         .testTag("home_empty_state_card"),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    border = BorderStroke(1.dp, BorderSubtle)
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Column(
                         modifier = Modifier
@@ -439,7 +426,7 @@ fun HomeScreen(
                                 Icon(
                                     imageVector = Icons.Outlined.Description,
                                     contentDescription = null,
-                                    tint = TextSecondary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(26.dp)
                                 )
                             }
@@ -451,188 +438,9 @@ fun HomeScreen(
                             text = "No scans yet",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = TextBlack
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        Text(
-                            text = "Scanned documents and pictures will appear here.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                    }
-                }
-            }
-        } else {
-            items(recentScans, key = { it.id }) { scan ->
-                RecentScanCard(
-                    scan = scan,
-                    onClick = { onReopenScan(scan) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 680.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CategoryItemCard(
-    title: String,
-    icon: ImageVector,
-    badgeBg: Color,
-    iconTint: Color,
-    testTag: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
-            .testTag(testTag),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, BorderSubtle)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 14.dp, horizontal = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = badgeBg,
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = title,
-                        tint = iconTint,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                fontWeight = FontWeight.Medium,
-                color = TextBlack
-            )
-        }
-    }
-}
-
-@Composable
-fun RecentScanCard(
-    scan: ScanEntity,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-            .testTag("recent_scan_card_${scan.id}"),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        border = BorderStroke(1.dp, BorderSubtle)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Thumbnail with optimization
-            Surface(
-                modifier = Modifier
-                    .size(58.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, BorderSubtle)
-            ) {
-                val thumbFile = (scan.thumbnailPath ?: scan.imagePath)?.let { File(it) }
-                if (thumbFile != null && thumbFile.exists()) {
-                    AsyncImage(
-                        model = thumbFile,
-                        contentDescription = "Scan Thumbnail",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Outlined.Description,
-                            contentDescription = null,
-                            tint = TextSecondary,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            // Details
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = scan.title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp),
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextBlack,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = scan.extractedText.ifBlank { "No text recognized" },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                val formattedDate = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-                    .format(Date(scan.timestamp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = formattedDate,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextSecondary
-                    )
-                    Text(
-                        text = "•",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outlineVariant
-                    )
-                    Text(
-                        text = "${scan.characterCount} chars",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium,
-                        color = MintGreen
-                    )
-                }
-            }
-        }
-    }
-}
+       
