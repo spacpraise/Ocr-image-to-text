@@ -93,6 +93,23 @@ fun HistoryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var scanToDelete by remember { mutableStateOf<ScanEntity?>(null) }
+    val historyEntries = remember(scans) {
+        scans.groupBy { scan -> scan.batchId ?: "single:${scan.id}" }
+            .values
+            .map { pages ->
+                val orderedPages = pages.sortedBy { it.pageIndex }
+                HistoryEntry(
+                    key = orderedPages.first().batchId ?: "single:${orderedPages.first().id}",
+                    pages = orderedPages,
+                    scan = orderedPages.firstOrNull { it.pageIndex == 0 } ?: orderedPages.first(),
+                    timestamp = pages.maxOf { it.timestamp }
+                )
+            }
+            .sortedByDescending { it.timestamp }
+    }
+    val dateGroups = remember(historyEntries) {
+        historyEntries.groupBy { historyDateLabel(it.timestamp) }
+    }
 
     fun copyText(text: String, title: String) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -189,7 +206,7 @@ fun HistoryScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${scans.size} ${if (scans.size == 1) "Scan" else "Scans"}",
+                    text = "${historyEntries.size} ${if (historyEntries.size == 1) "Item" else "Items"}",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -262,13 +279,28 @@ fun HistoryScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
                 ) {
-                    items(scans, key = { it.id }) { scan ->
-                        HistoryScanCard(
-                            scan = scan,
-                            onReopen = { onReopenScan(scan) },
-                            onCopy = { copyText(scan.extractedText, scan.title) },
-                            onDelete = { scanToDelete = scan }
-                        )
+                    dateGroups.forEach { (dateLabel, entries) ->
+                        item(key = "date_$dateLabel") {
+                            Text(
+                                text = dateLabel,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+                            )
+                        }
+                        items(entries, key = { it.key }) { entry ->
+                            val scan = entry.scan
+                            val combinedText = entry.pages.joinToString("\n\n") { it.extractedText }.trim()
+                            HistoryScanCard(
+                                scan = scan,
+                                pageCount = entry.pages.size,
+                                timestamp = entry.timestamp,
+                                onReopen = { onReopenScan(scan) },
+                                onCopy = { copyText(combinedText, scan.title) },
+                                onDelete = { scanToDelete = scan }
+                            )
+                        }
                     }
                 }
             }
@@ -288,7 +320,7 @@ fun HistoryScreen(
             },
             text = {
                 Text(
-                    text = "Are you sure you want to delete \"${scan.title}\"? This action cannot be undone.",
+                    text = "Are you sure you want to delete \"${scan.title}\" and all pages in this document or batch? This action cannot be undone.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -316,9 +348,35 @@ fun HistoryScreen(
     }
 }
 
+private data class HistoryEntry(
+    val key: String,
+    val pages: List<ScanEntity>,
+    val scan: ScanEntity,
+    val timestamp: Long
+)
+
+private fun historyDateLabel(timestamp: Long): String {
+    val now = java.util.Calendar.getInstance()
+    val target = java.util.Calendar.getInstance().apply { timeInMillis = timestamp }
+    fun dayStart(calendar: java.util.Calendar): Long = (calendar.clone() as java.util.Calendar).apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
+    val dayDiff = ((dayStart(now) - dayStart(target)) / 86_400_000L).toInt()
+    return when (dayDiff) {
+        0 -> "Today"
+        1 -> "Yesterday"
+        else -> SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(timestamp))
+    }
+}
+
 @Composable
 private fun HistoryScanCard(
     scan: ScanEntity,
+    pageCount: Int,
+    timestamp: Long,
     onReopen: () -> Unit,
     onCopy: () -> Unit,
     onDelete: () -> Unit,
@@ -375,7 +433,7 @@ private fun HistoryScanCard(
             // Details
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = scan.title,
+                    text = if (pageCount > 1) "${scan.title} · ${pageCount} pages" else scan.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -396,7 +454,7 @@ private fun HistoryScanCard(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 val formattedDate = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
-                    .format(Date(scan.timestamp))
+                    .format(Date(timestamp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
