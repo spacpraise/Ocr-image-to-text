@@ -25,5 +25,12 @@ jobs:
           gradle-version: '9.3.1'
       - name: Compile debug app
         run: gradle --no-daemon :app:assembleDebug
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: snaptext-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
       - name: Run unit tests
         run: gradle --no-daemon :app:testDebugUnitTest
