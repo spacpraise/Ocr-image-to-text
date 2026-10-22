@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,15 +28,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.BorderSubtle
-import com.example.ui.theme.PureBlack
-import com.example.ui.theme.TextBlack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +40,7 @@ fun ImageSourceSheet(
     onDismiss: () -> Unit,
     onCameraSelect: () -> Unit,
     onGallerySelect: () -> Unit,
+    onDocumentSelect: () -> Unit,
     onSampleSelect: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -70,10 +68,10 @@ fun ImageSourceSheet(
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
-            // Two clean cards side-by-side matching screenshot
+            // Three source options: Camera, Gallery (multi-select), Document (PDF)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OptionCard(
                     title = "Camera",
@@ -96,11 +94,22 @@ fun ImageSourceSheet(
                         onGallerySelect()
                     }
                 )
+
+                OptionCard(
+                    title = "Document",
+                    icon = Icons.Outlined.Description,
+                    modifier = Modifier.weight(1f),
+                    testTag = "source_document_button",
+                    onClick = {
+                        onDismiss()
+                        onDocumentSelect()
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Cancel button: full-width solid black pill button
+            // Cancel button: full-width solid pill button, theme-driven
             Button(
                 onClick = onDismiss,
                 modifier = Modifier
@@ -134,12 +143,12 @@ private fun OptionCard(
 ) {
     Surface(
         modifier = modifier
-            .height(118.dp)
+            .height(104.dp)
             .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .testTag(testTag),
         shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.2.dp, BorderSubtle),
+        border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.outlineVariant),
         color = MaterialTheme.colorScheme.surface
     ) {
         Column(
@@ -151,14 +160,14 @@ private fun OptionCard(
                 imageVector = icon,
                 contentDescription = title,
                 tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(32.dp)
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = TextBlack
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
