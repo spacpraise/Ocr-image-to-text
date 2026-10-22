@@ -248,7 +248,7 @@ fun SnapTextApp(
 
     // Multi-image photo picker (gallery entry point from the source sheet)
     val galleryLauncherMultiple = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia(20)
+        contract = ActivityResultContracts.PickMultipleVisualMedia()
     ) { uris: List<Uri> ->
         if (uris.isNotEmpty()) {
             if (uris.size == 1) {
