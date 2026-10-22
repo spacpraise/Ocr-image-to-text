@@ -421,6 +421,7 @@ fun SnapTextApp(
                                 withContext(Dispatchers.IO) { sessionManager.signOut() }
                                 connectedAccount = null
                                 accountBusy = false
+                                openAccountWebsite("/logout")
                                 Toast.makeText(context, "Signed out of SnapText.", Toast.LENGTH_SHORT).show()
                             }
                         },
