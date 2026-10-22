@@ -271,8 +271,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             stagedPdfFile = staged
+            // Render small thumbnails up front so every PDF page is visible in the
+            // bottom strip immediately, without requiring the user to open each page.
             val placeholderPages = (0 until pageCount).map { index ->
-                ScanPage(bitmap = null, state = PageScanState.PENDING, pdfPageIndex = index)
+                val thumbnail = ImageUtils.renderPdfPage(staged, index, targetMaxDimension = 180)?.first
+                ScanPage(bitmap = thumbnail, state = PageScanState.PENDING, pdfPageIndex = index)
             }
 
             withContext(Dispatchers.Main) {
