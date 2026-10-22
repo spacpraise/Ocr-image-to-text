@@ -123,7 +123,9 @@ fun HomeScreen(
                         )
                     }
 
-                    Box {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        UpgradeButton(onClick = onUpgradeClick)
+                        Box {
                         IconButton(
                             onClick = { showMenu = true },
                             modifier = Modifier.testTag("home_more_menu_button")
@@ -171,20 +173,10 @@ fun HomeScreen(
                                 modifier = Modifier.testTag("menu_item_history")
                             )
                         }
+                        }
                     }
                 }
             }
-        }
-
-        item {
-            UsageSummaryCard(
-                planName = "Free",
-                imagesUsed = 0,
-                imageLimit = 3,
-                pdfsUsed = 0,
-                pdfLimit = 0,
-                onUpgradeClick = onUpgradeClick
-            )
         }
 
         // Minimalist Document Category Shelf directly matching screenshot
