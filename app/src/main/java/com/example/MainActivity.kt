@@ -292,8 +292,7 @@ fun SnapTextApp(
                         onSearchQueryChange = { viewModel.setSearchQuery(it) },
                         onReopenScan = { scan -> viewModel.reopenScan(scan, context) },
                         onDeleteScan = { scan -> viewModel.deleteScan(scan) },
-                        onBack = { viewModel.handleBack() },
-                        onUpgradeClick = { showPremiumSheet = true }
+                        onBack = { viewModel.handleBack() }
                     )
                 }
 
