@@ -75,7 +75,7 @@ fun AccountScreen(
                         Text(planTitle(currentPlan), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                     }
                     Button(onClick = onUpgradeClick, shape = CircleShape, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface, contentColor = MaterialTheme.colorScheme.surface), contentPadding = PaddingValues(horizontal = 22.dp, vertical = 14.dp)) {
-                        Text(if (currentPlan == "free") "Explore Pro" else "Manage plan", fontWeight = FontWeight.SemiBold)
+                        Text(if (currentPlan == "free") "Explore Pro" else "Premium", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
