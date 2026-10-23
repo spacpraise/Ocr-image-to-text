@@ -3,11 +3,14 @@ package com.example.ocr
 import android.graphics.Bitmap
 import android.graphics.RectF
 import android.util.Log
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.Schema
-import com.google.firebase.ai.type.content
-import com.google.firebase.ai.type.generationConfig
+import android.util.Base64
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
@@ -54,36 +57,6 @@ data class OcrResult(
 
 object OcrEngine {
 
-    // Structured JSON Schema definition for Gemini 3.8 Flash
-    private val ocrResponseSchema by lazy {
-        Schema.obj(
-            properties = mapOf(
-                "hasText" to Schema.boolean(description = "Whether any readable text was detected in the image"),
-                "extractedText" to Schema.string(
-                    description = "The exact readable text extracted from the image. Preserves layout, line breaks, paragraph breaks, and column reading order"
-                ),
-                "confidenceNote" to Schema.string(
-                    description = "Assessment of image clarity, quality issues, or any illegible/blurry parts"
-                ),
-                "languageDetected" to Schema.string(
-                    description = "Primary language or languages detected in the text"
-                )
-            ),
-            optionalProperties = listOf("confidenceNote", "languageDetected")
-        )
-    }
-
-    private val geminiModel by lazy {
-        val config = generationConfig {
-            responseMimeType = "application/json"
-            responseSchema = ocrResponseSchema
-        }
-        Firebase.ai.generativeModel(
-            modelName = "gemini-3.8-flash",
-            generationConfig = config
-        )
-    }
-
     private val mlKitRecognizer by lazy {
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     }
@@ -106,52 +79,59 @@ Analyze the provided image and extract all readable text according to these stri
     suspend fun recognizeText(bitmap: Bitmap): OcrResult =
         recognizeWithMlKit(bitmap, "Processed on this device. No internet connection required.")
 
-    /** Optional cloud AI OCR path. Call only after the user explicitly chooses cloud processing. */
+    /** Cloud Gemini OCR through our server; falls back to on-device ML Kit after 10 seconds. */
     suspend fun recognizeTextWithAi(bitmap: Bitmap): OcrResult {
-        // Attempt Gemini 3.8 Flash extraction first
-        try {
-            Log.d(TAG, "Starting Gemini 3.8 Flash multimodal text extraction...")
-            val response = withTimeout(45_000L) {
-                geminiModel.generateContent(
-                    content {
-                        image(bitmap)
-                        text(OCR_EXTRACTION_PROMPT)
+        return try {
+            withTimeout(10_000L) {
+                val jsonString = withContext(Dispatchers.IO) {
+                    val output = java.io.ByteArrayOutputStream()
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 85, output)
+                    val encoded = Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP)
+                    val connection = (URL("https://snaptext-pearl.vercel.app/api/ocr").openConnection() as HttpURLConnection)
+                    try {
+                        connection.requestMethod = "POST"
+                        connection.connectTimeout = 4_000
+                        connection.readTimeout = 8_500
+                        connection.doOutput = true
+                        connection.setRequestProperty("Content-Type", "application/json")
+                        connection.setRequestProperty("Accept", "application/json")
+                        val request = JSONObject()
+                            .put("imageBase64", encoded)
+                            .put("mimeType", "image/jpeg")
+                        OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { it.write(request.toString()) }
+                        val status = connection.responseCode
+                        val stream = if (status in 200..299) connection.inputStream else connection.errorStream
+                        val body = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                        if (status !in 200..299) throw IllegalStateException("Cloud OCR failed ($status)")
+                        body
+                    } finally {
+                        connection.disconnect()
                     }
-                )
-            }
-
-            val jsonString = response.text
-            if (!jsonString.isNullOrBlank()) {
+                }
                 val json = JSONObject(jsonString)
-                val rawText = json.optString("extractedText", "").trim()
-                val confidenceNote = json.optString("confidenceNote", "")
-                val language = json.optString("languageDetected", "Auto-detected")
-                val hasText = json.optBoolean("hasText", rawText.isNotEmpty())
-
-                val finalText = if (hasText) rawText else ""
+                val finalText = json.optString("extractedText", "").trim()
                 val lines = if (finalText.isEmpty()) 0 else finalText.lines().size
-                val words = if (finalText.isEmpty()) 0 else finalText.split(Regex("\\s+")).filter { it.isNotBlank() }.size
-
-                Log.d(TAG, "Gemini extraction succeeded: ${finalText.length} chars, $words words")
-                return OcrResult(
+                val words = if (finalText.isEmpty()) 0 else finalText.split(Regex("\\s+")).count { it.isNotBlank() }
+                OcrResult(
                     fullText = finalText,
                     characterCount = finalText.length,
                     wordCount = words,
                     lineCount = lines,
-                    confidenceNote = confidenceNote,
-                    languageDetected = language,
+                    confidenceNote = json.optString("confidenceNote", "Extracted with Google Gemini."),
+                    languageDetected = json.optString("languageDetected", "Auto-detected"),
                     isAiModel = true,
-                    words = emptyList() // Gemini path has no bounding boxes.
+                    words = emptyList()
                 )
             }
         } catch (e: CancellationException) {
-            throw e
+            // A timeout is a fallback condition; explicit parent cancellation should still propagate.
+            if (e !is kotlinx.coroutines.TimeoutCancellationException) throw e
+            Log.w(TAG, "Cloud OCR exceeded 10 seconds; using local ML Kit OCR.")
+            recognizeWithMlKit(bitmap, "Extracted via on-device OCR engine")
         } catch (e: Exception) {
-            Log.w(TAG, "Gemini vision model call encountered issue, falling back to on-device ML Kit OCR: ${e.message}", e)
+            Log.w(TAG, "Cloud OCR unavailable; using local ML Kit OCR: ${e.message}")
+            recognizeWithMlKit(bitmap, "Extracted via on-device OCR engine")
         }
-
-        // Resilient fallback to on-device ML Kit OCR
-        return recognizeWithMlKit(bitmap, "Extracted via on-device OCR engine")
     }
 
     private suspend fun recognizeWithMlKit(bitmap: Bitmap, fallbackNote: String): OcrResult {
