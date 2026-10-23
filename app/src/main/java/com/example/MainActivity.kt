@@ -226,24 +226,6 @@ fun SnapTextApp(
         }
     }
 
-    fun startCheckout(plan: String) {
-        accountScope.launch {
-            try {
-                val account = connectedAccount ?: withContext(Dispatchers.IO) { sessionManager.refreshAccount() }
-                connectedAccount = account
-                if (account == null) {
-                    Toast.makeText(context, "Connect your SnapText account before upgrading.", Toast.LENGTH_LONG).show()
-                    openConnectWebsite()
-                    return@launch
-                }
-                val checkoutUrl = withContext(Dispatchers.IO) { sessionManager.createCheckoutUrl(plan) }
-                CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(checkoutUrl))
-            } catch (e: Exception) {
-                Toast.makeText(context, e.message ?: "Could not start checkout. Please try again.", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
     fun handlePdfPicked(uri: Uri) {
         accountScope.launch {
             val account = connectedAccount ?: runCatching {
@@ -599,7 +581,7 @@ fun SnapTextApp(
                         displayName = connectedAccount?.name,
                         email = connectedAccount?.email,
                         onBack = { viewModel.handleBack() },
-                        onUpgradeClick = { showPremiumSheet = true },
+                        onUpgradeClick = { openAccountWebsite("/account/billing") },
                         onSignInMethodClick = { if (connectedAccount == null) openConnectWebsite() else openAccountWebsite("/account") },
                         onChangePasswordClick = { openAccountWebsite("/forgot-password") },
                         onSignOutClick = {
@@ -723,15 +705,9 @@ fun SnapTextApp(
         if (showPremiumSheet) {
             PremiumPlansSheet(
                 onDismiss = { showPremiumSheet = false },
-                onContinue = { selectedPlan: SubscriptionPlan ->
+                onContinue = {
                     showPremiumSheet = false
-                    startCheckout(
-                        when (selectedPlan) {
-                            SubscriptionPlan.MONTHLY -> "pro_monthly"
-                            SubscriptionPlan.YEARLY -> "pro_yearly"
-                            SubscriptionPlan.LIFETIME -> "lifetime"
-                        }
-                    )
+                    openAccountWebsite("/account/billing")
                 }
             )
         }
