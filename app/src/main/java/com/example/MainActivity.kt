@@ -55,10 +55,41 @@ import com.example.ui.screens.OnboardingScreen
 import com.example.ui.screens.PremiumPlansSheet
 import com.example.ui.screens.ScanningScreen
 import com.example.ui.screens.SettingsScreen
+import com.example.ui.screens.UpdateAvailableSheet
 import com.example.ui.screens.SubscriptionPlan
 import com.example.ui.theme.SnapTextTheme
 import com.example.util.configureAppCheck
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import org.json.JSONObject
+
+private data class AppUpdateInfo(val versionName: String, val versionCode: Int, val downloadUrl: String)
+
+private suspend fun fetchLatestAppUpdate(context: Context): AppUpdateInfo? = withContext(Dispatchers.IO) {
+    val connection = (URL("https://snaptext-pearl.vercel.app/api/app-version").openConnection() as HttpURLConnection)
+    try {
+        connection.requestMethod = "GET"
+        connection.connectTimeout = 5000
+        connection.readTimeout = 5000
+        connection.setRequestProperty("Accept", "application/json")
+        if (connection.responseCode !in 200..299) return@withContext null
+        val payload = connection.inputStream.bufferedReader().use { it.readText() }
+        val json = JSONObject(payload)
+        val latestCode = json.optInt("versionCode", 1)
+        val version = json.optString("latestVersion", "1.0.0")
+        val downloadUrl = json.optString("downloadUrl", "")
+        if (latestCode > BuildConfig.VERSION_CODE && downloadUrl.startsWith("https://")) {
+            val dismissedCode = context.getSharedPreferences("app_updates", Context.MODE_PRIVATE)
+                .getInt("dismissed_version_code", 0)
+            if (latestCode > dismissedCode) AppUpdateInfo(version, latestCode, downloadUrl) else null
+        } else null
+    } catch (_: Exception) {
+        null
+    } finally {
+        connection.disconnect()
+    }
+}
 
 class MainActivity : ComponentActivity() {
     var incomingShareIntent by mutableStateOf<Intent?>(null)
@@ -124,6 +155,7 @@ fun SnapTextApp(
     val accountScope = rememberCoroutineScope()
     var connectedAccount by remember { mutableStateOf<SnapTextAccount?>(null) }
     var accountBusy by remember { mutableStateOf(false) }
+    var availableUpdate by remember { mutableStateOf<AppUpdateInfo?>(null) }
 
     fun openAccountWebsite(path: String) {
         val uri = Uri.parse(AccountSessionManager.WEBSITE_URL + path)
@@ -159,6 +191,7 @@ fun SnapTextApp(
         runCatching { withContext(Dispatchers.IO) { sessionManager.refreshAccount() } }
             .onSuccess { connectedAccount = it }
             .onFailure { connectedAccount = null }
+        availableUpdate = fetchLatestAppUpdate(context)
     }
 
     LaunchedEffect(incomingAuthCode) {
@@ -182,6 +215,9 @@ fun SnapTextApp(
                     runCatching { withContext(Dispatchers.IO) { sessionManager.refreshAccount() } }
                         .onSuccess { connectedAccount = it }
                         .onFailure { connectedAccount = null }
+                    if (availableUpdate == null) {
+                        availableUpdate = fetchLatestAppUpdate(context)
+                    }
                 }
             }
         }
@@ -477,6 +513,24 @@ fun SnapTextApp(
                 },
                 onSampleSelect = {
                     viewModel.onSamplePicked(SampleDocumentType.CONTRACT, context)
+                }
+            )
+        }
+        availableUpdate?.let { update ->
+            UpdateAvailableSheet(
+                version = update.versionName,
+                onUpdate = {
+                    availableUpdate = null
+                    runCatching {
+                        CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(update.downloadUrl))
+                    }.onFailure {
+                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.downloadUrl))) }
+                    }
+                },
+                onDismiss = {
+                    context.getSharedPreferences("app_updates", Context.MODE_PRIVATE)
+                        .edit().putInt("dismissed_version_code", update.versionCode).apply()
+                    availableUpdate = null
                 }
             )
         }
