@@ -62,9 +62,11 @@ import com.example.util.configureAppCheck
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import java.io.File
+import java.io.FileOutputStream
 import org.json.JSONObject
 
-private data class AppUpdateInfo(val versionName: String, val versionCode: Int, val downloadUrl: String)
+private data class AppUpdateInfo(val versionName: String, val versionCode: Int, val apkUrl: String)
 
 private suspend fun fetchLatestAppUpdate(context: Context): AppUpdateInfo? = withContext(Dispatchers.IO) {
     val connection = (URL("https://snaptext-pearl.vercel.app/api/app-version").openConnection() as HttpURLConnection)
@@ -79,11 +81,8 @@ private suspend fun fetchLatestAppUpdate(context: Context): AppUpdateInfo? = wit
         val latestCode = json.optInt("versionCode", 1)
         val version = json.optString("latestVersion", "1.0.0")
         val apkUrl = json.optString("downloadUrl", "")
-        val downloadPageUrl = json.optString("downloadPageUrl", "https://snaptext-pearl.vercel.app/download")
-        if (latestCode > BuildConfig.VERSION_CODE && apkUrl.startsWith("https://") && downloadPageUrl.startsWith("https://")) {
-            val dismissedCode = context.getSharedPreferences("app_updates", Context.MODE_PRIVATE)
-                .getInt("dismissed_version_code", 0)
-            if (latestCode > dismissedCode) AppUpdateInfo(version, latestCode, downloadPageUrl) else null
+        if (latestCode > BuildConfig.VERSION_CODE && apkUrl.startsWith("https://")) {
+            AppUpdateInfo(version, latestCode, apkUrl)
         } else null
     } catch (_: Exception) {
         null
@@ -157,6 +156,8 @@ fun SnapTextApp(
     var connectedAccount by remember { mutableStateOf<SnapTextAccount?>(null) }
     var accountBusy by remember { mutableStateOf(false) }
     var availableUpdate by remember { mutableStateOf<AppUpdateInfo?>(null) }
+    var updateDownloadProgress by remember { mutableStateOf<Int?>(null) }
+    var updateDownloadInProgress by remember { mutableStateOf(false) }
 
     fun openAccountWebsite(path: String) {
         val uri = Uri.parse(AccountSessionManager.WEBSITE_URL + path)
@@ -520,19 +521,58 @@ fun SnapTextApp(
         availableUpdate?.let { update ->
             UpdateAvailableSheet(
                 version = update.versionName,
+                downloadProgress = updateDownloadProgress,
                 onUpdate = {
-                    availableUpdate = null
-                    runCatching {
-                        CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(update.downloadUrl))
-                    }.onFailure {
-                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.downloadUrl))) }
+                    if (!updateDownloadInProgress) {
+                        accountScope.launch {
+                            updateDownloadInProgress = true
+                            updateDownloadProgress = 0
+                            try {
+                                val apkFile = withContext(Dispatchers.IO) {
+                                    val connection = (URL(update.apkUrl).openConnection() as HttpURLConnection)
+                                    val target = File(context.cacheDir, "snaptext-update.apk")
+                                    try {
+                                        connection.connectTimeout = 15000
+                                        connection.readTimeout = 30000
+                                        connection.instanceFollowRedirects = true
+                                        connection.connect()
+                                        if (connection.responseCode !in 200..299) error("Download failed (${connection.responseCode})")
+                                        val total = connection.contentLengthLong
+                                        connection.inputStream.use { input ->
+                                            FileOutputStream(target).use { output ->
+                                                val buffer = ByteArray(16 * 1024)
+                                                var downloaded = 0L
+                                                while (true) {
+                                                    val count = input.read(buffer)
+                                                    if (count < 0) break
+                                                    output.write(buffer, 0, count)
+                                                    downloaded += count
+                                                    if (total > 0) {
+                                                        val percent = ((downloaded * 100) / total).toInt().coerceIn(0, 99)
+                                                        withContext(Dispatchers.Main) { updateDownloadProgress = percent }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        target
+                                    } finally { connection.disconnect() }
+                                }
+                                updateDownloadProgress = 100
+                                val apkUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", apkFile)
+                                val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(apkUri, "application/vnd.android.package-archive")
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(installIntent)
+                                availableUpdate = null
+                            } catch (_: Exception) {
+                                Toast.makeText(context, "Couldn\u0027t download the update. Please try again.", Toast.LENGTH_LONG).show()
+                                updateDownloadProgress = null
+                            } finally { updateDownloadInProgress = false }
+                        }
                     }
                 },
-                onDismiss = {
-                    context.getSharedPreferences("app_updates", Context.MODE_PRIVATE)
-                        .edit().putInt("dismissed_version_code", update.versionCode).apply()
-                    availableUpdate = null
-                }
+                onDismiss = { if (!updateDownloadInProgress) availableUpdate = null }
             )
         }
         if (showPremiumSheet) {
