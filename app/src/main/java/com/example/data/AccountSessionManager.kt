@@ -26,6 +26,10 @@ data class SnapTextAccount(
     val plan: String,
     val status: String,
     val expiresAt: String? = null,
+    // "google" or "email" -- read from the website's /api/app-session response once that
+    // endpoint starts including it (see note in accountFrom below). Null until then, in
+    // which case the UI should show a generic "Connected" label rather than guessing.
+    val signInProvider: String? = null,
 )
 
 class AccountSessionManager(context: Context) {
@@ -112,6 +116,37 @@ class AccountSessionManager(context: Context) {
         clearToken()
     }
 
+    /**
+     * Permanently deletes the signed-in user's account (auth identity, entitlement,
+     * sessions, handoff codes -- everything keyed to their user id) and clears the
+     * local session. Requires the website to expose DELETE /api/app-session/account
+     * calling the Supabase delete_own_account() RPC (see Supabase migration notes).
+     * Throws if there's no saved session or the server call fails; callers should
+     * surface the message and NOT clear local state on failure, so the user can retry.
+     */
+    fun deleteAccount() {
+        val token = savedToken() ?: throw IllegalStateException("Connect your SnapText account first.")
+        val request = Request.Builder().url("$WEBSITE_URL/api/app-session/account")
+            .header("Authorization", "Bearer $token").delete().build()
+        executeJson(request)
+        clearToken()
+    }
+
+    /**
+     * Fires a single, anonymous "app installed/opened" ping the first time this is
+     * called for this device install (gated by PreferencesManager.markInstallPingSentIfNeeded
+     * at the call site, so this itself has no dedupe logic). Best-effort: failures are
+     * swallowed since this must never block app startup or show an error to the user.
+     */
+    fun pingInstallEvent() {
+        runCatching {
+            val request = Request.Builder().url("$WEBSITE_URL/api/app-install-ping").post(
+                JSONObject().toString().toRequestBody(jsonType)
+            ).build()
+            client.newCall(request).execute().use { /* ignore response body/errors */ }
+        }
+    }
+
     private fun accountFrom(json: JSONObject): SnapTextAccount {
         val user = json.getJSONObject("user")
         val entitlement = json.optJSONObject("entitlement") ?: JSONObject()
@@ -125,6 +160,10 @@ class AccountSessionManager(context: Context) {
             plan = if (status == "active") plan else "free",
             status = status,
             expiresAt = json.optString("expiresAt").takeIf { it.isNotBlank() && it != "null" },
+            // Reads user.provider once the website includes it in the session payload
+            // (Supabase Auth already tracks this in auth.users.raw_app_meta_data.provider,
+            // it just isn't being forwarded by /api/app-session yet). Safe no-op until then.
+            signInProvider = user.optString("provider").takeIf { it.isNotBlank() && it != "null" },
         )
     }
 
