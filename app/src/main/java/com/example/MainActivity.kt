@@ -232,7 +232,6 @@ fun SnapTextApp(
                 val account = connectedAccount ?: withContext(Dispatchers.IO) { sessionManager.refreshAccount() }
                 connectedAccount = account
                 if (account == null) {
-                    showPremiumSheet = false
                     Toast.makeText(context, "Connect your SnapText account before upgrading.", Toast.LENGTH_LONG).show()
                     openConnectWebsite()
                     return@launch
@@ -726,6 +725,7 @@ fun SnapTextApp(
             PremiumPlansSheet(
                 onDismiss = { showPremiumSheet = false },
                 onContinue = { selectedPlan: SubscriptionPlan ->
+                    showPremiumSheet = false
                     startCheckout(
                         when (selectedPlan) {
                             SubscriptionPlan.MONTHLY -> "pro_monthly"
