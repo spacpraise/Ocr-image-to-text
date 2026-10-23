@@ -563,7 +563,8 @@ fun SnapTextApp(
                         onSearchQueryChange = { viewModel.setSearchQuery(it) },
                         onReopenScan = { scan -> viewModel.reopenScan(scan, context) },
                         onDeleteScan = { scan -> viewModel.deleteScan(scan) },
-                        onBack = { viewModel.handleBack() }
+                        onBack = { viewModel.handleBack() },
+                        onSettingsClick = { viewModel.navigateTo(Screen.Settings) }
                     )
                 }
 
