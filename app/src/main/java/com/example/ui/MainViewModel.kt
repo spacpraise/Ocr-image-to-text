@@ -25,11 +25,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
@@ -62,6 +64,9 @@ data class ScanPage(
     // Only set for PDF-backed pages; lets scanPageIfNeeded re-render/re-extract lazily.
     val pdfPageIndex: Int? = null
 )
+
+/** Free-tier daily scan allowance. Premium accounts are unlimited and skip this check entirely. */
+private const val FREE_DAILY_SCAN_LIMIT = 3
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getDatabase(application)
@@ -99,11 +104,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _docImportError = MutableStateFlow<String?>(null)
     val docImportError: StateFlow<String?> = _docImportError.asStateFlow()
 
+    // --- Free-tier daily usage (resets at local midnight) ---
+    private val _scansUsedToday = MutableStateFlow(prefs.scansUsedForToday())
+    val scansRemainingToday: StateFlow<Int> =
+        _scansUsedToday.map { (FREE_DAILY_SCAN_LIMIT - it).coerceAtLeast(0) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FREE_DAILY_SCAN_LIMIT)
+
+    private val _dailyLimitReached = MutableStateFlow<Boolean?>(null)
+    /** Set to true right when a free-tier scan attempt is blocked; UI shows the upgrade prompt then clears it. */
+    val dailyLimitReached: StateFlow<Boolean?> = _dailyLimitReached.asStateFlow()
+
+    fun clearDailyLimitSignal() { _dailyLimitReached.value = null }
+
     // Search and Scans History
     val allScans: StateFlow<List<ScanEntity>> = scanDao.getAllScans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val recentScans: StateFlow<List<ScanEntity>> = scanDao.getRecentScans(3)
+    // Home screen "recent" list: the last 3 history *entries* (one card per batch --
+    // a whole PDF or a whole multi-image pick counts as one), not the last 3 raw rows.
+    // A 5-page PDF scan must not fill this list by itself.
+    val recentScans: StateFlow<List<ScanEntity>> = allScans
+        .map { scans ->
+            scans.groupBy { it.batchId ?: "single:${it.id}" }
+                .values
+                .map { pages -> pages.maxByOrNull { it.timestamp } ?: pages.first() }
+                .sortedByDescending { it.timestamp }
+                .take(3)
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _searchQuery = MutableStateFlow("")
@@ -332,9 +359,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         scanPageIfNeeded(index, context, force = true)
     }
 
+    /**
+     * Checks the free-tier daily scan allowance before starting a new page scan.
+     * Premium accounts (isPremiumProvider returning true) always pass. Reopening an
+     * already-scanned page (force retry) does not consume a new allowance slot.
+     */
+    var isPremiumProvider: () -> Boolean = { false }
+
+    private fun consumeDailyScanAllowanceIfNeeded(): Boolean {
+        if (isPremiumProvider()) return true
+        val usedToday = prefs.scansUsedForToday()
+        if (usedToday >= FREE_DAILY_SCAN_LIMIT) {
+            _dailyLimitReached.value = true
+            return false
+        }
+        prefs.incrementScansUsedForToday()
+        _scansUsedToday.value = prefs.scansUsedForToday()
+        return true
+    }
+
     private fun scanPageIfNeeded(index: Int, context: Context, force: Boolean = false) {
         val page = _pages.value.getOrNull(index) ?: return
         if (!force && page.state != PageScanState.PENDING) return
+
+        if (!force && !consumeDailyScanAllowanceIfNeeded()) {
+            updatePage(index) {
+                it.copy(
+                    state = PageScanState.FAILED,
+                    errorMessage = "You've used today's $FREE_DAILY_SCAN_LIMIT free scans. Upgrade to Premium for unlimited scans."
+                )
+            }
+            return
+        }
 
         updatePage(index) { it.copy(state = PageScanState.SCANNING) }
 
@@ -349,7 +405,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     scanPdfPage(pdfFile, pdfIndex)
                 } else {
                     val bmp = page.bitmap ?: throw IllegalStateException("No image for this page")
-                    bmp to OcrEngine.recognizeText(bmp)
+                    bmp to OcrEngine.recognizeTextWithAi(bmp)
                 }
 
                 // Persist to history as its own ScanEntity.
@@ -456,7 +512,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // ---------------------------------------------------------------------
     // Actions on the current page (ScanningScreen toolbar)
     // ---------------------------------------------------------------------
-fun deleteCurrentPageScan(context: Context) {
+    fun deleteCurrentPageScan(context: Context) {
         val index = _currentPageIndex.value
         val page = _pages.value.getOrNull(index) ?: return
         val scanId = page.savedScanId ?: return
