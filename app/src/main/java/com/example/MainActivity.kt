@@ -405,6 +405,7 @@ fun SnapTextApp(
                         onUpgradeClick = { openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account/billing") },
                         displayName = connectedAccount?.name,
                         email = connectedAccount?.email,
+                        photoUrl = connectedAccount?.photoUrl,
                         onAccountClick = { viewModel.navigateTo(Screen.Account) },
                         onHistoryClick = { viewModel.navigateTo(Screen.History) },
                         onPrivacyClick = { openAccountWebsite("/privacy") },
