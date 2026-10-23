@@ -10,6 +10,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.data.AccountSessionManager
+import com.example.data.PreferencesManager
 import com.example.data.SnapTextAccount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -65,6 +66,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.io.File
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 import org.json.JSONObject
 
 private data class AppUpdateInfo(val versionName: String, val versionCode: Int, val apkUrl: String)
@@ -90,6 +95,28 @@ private suspend fun fetchLatestAppUpdate(context: Context): AppUpdateInfo? = wit
     } finally {
         connection.disconnect()
     }
+}
+
+/** Parses the entitlement's expiresAt (ISO-8601) into whole days remaining from now, local time. Null if unparseable or already expired. */
+private fun daysUntilExpiry(expiresAt: String?): Int? {
+    if (expiresAt.isNullOrBlank()) return null
+    return runCatching {
+        val formats = listOf(
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd'T'HH:mm:ssXXX"
+        )
+        var parsed: Date? = null
+        for (pattern in formats) {
+            parsed = runCatching {
+                SimpleDateFormat(pattern, Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.parse(expiresAt)
+            }.getOrNull()
+            if (parsed != null) break
+        }
+        val target = parsed ?: return null
+        val diffMillis = target.time - System.currentTimeMillis()
+        if (diffMillis <= 0) 0 else TimeUnit.MILLISECONDS.toDays(diffMillis + TimeUnit.DAYS.toMillis(1) - 1).toInt()
+    }.getOrNull()
 }
 
 class MainActivity : ComponentActivity() {
@@ -153,13 +180,23 @@ fun SnapTextApp(
 ) {
     val context = LocalContext.current
     val sessionManager = remember(context) { AccountSessionManager(context) }
+    val prefs = remember(context) { PreferencesManager(context) }
     val lifecycleOwner = LocalLifecycleOwner.current
     val accountScope = rememberCoroutineScope()
     var connectedAccount by remember { mutableStateOf<SnapTextAccount?>(null) }
     var accountBusy by remember { mutableStateOf(false) }
+    var deletingAccount by remember { mutableStateOf(false) }
     var availableUpdate by remember { mutableStateOf<AppUpdateInfo?>(null) }
     var updateDownloadProgress by remember { mutableStateOf<Int?>(null) }
     var updateDownloadInProgress by remember { mutableStateOf(false) }
+
+    val isPremiumAccount = connectedAccount?.plan != null && connectedAccount?.plan != "free"
+
+    // Keep the ViewModel's premium check in sync so the daily free-scan limit never
+    // applies to upgraded accounts.
+    LaunchedEffect(isPremiumAccount) {
+        viewModel.isPremiumProvider = { isPremiumAccount }
+    }
 
     fun openAccountWebsite(path: String) {
         val uri = Uri.parse(AccountSessionManager.WEBSITE_URL + path)
@@ -209,11 +246,32 @@ fun SnapTextApp(
         }
     }
 
+    fun deleteAccount() {
+        deletingAccount = true
+        accountScope.launch {
+            try {
+                withContext(Dispatchers.IO) { sessionManager.deleteAccount() }
+                connectedAccount = null
+                viewModel.navigateTo(Screen.Home, clearStack = true)
+                Toast.makeText(context, "Your account has been deleted.", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, e.message ?: "Could not delete your account. Please try again.", Toast.LENGTH_LONG).show()
+            } finally {
+                deletingAccount = false
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         runCatching { withContext(Dispatchers.IO) { sessionManager.refreshAccount() } }
             .onSuccess { connectedAccount = it }
             .onFailure { connectedAccount = null }
         availableUpdate = fetchLatestAppUpdate(context)
+        // Anonymous, one-time-per-install download/open ping -- fires even for users
+        // who never sign up, so it reflects true install count, not just sign-ups.
+        if (prefs.markInstallPingSentIfNeeded()) {
+            withContext(Dispatchers.IO) { sessionManager.pingInstallEvent() }
+        }
     }
 
     LaunchedEffect(incomingAuthCode) {
@@ -293,6 +351,8 @@ fun SnapTextApp(
     val allScans by viewModel.filteredScans.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val storageInfo by viewModel.storageInfo.collectAsState()
+    val scansRemainingToday by viewModel.scansRemainingToday.collectAsState()
+    val dailyLimitReached by viewModel.dailyLimitReached.collectAsState()
 
     val selectedBitmap by viewModel.selectedBitmap.collectAsState()
     val imageMetadata by viewModel.imageMetadata.collectAsState()
@@ -308,6 +368,13 @@ fun SnapTextApp(
         docImportError?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             viewModel.clearDocImportError()
+        }
+    }
+
+    LaunchedEffect(dailyLimitReached) {
+        if (dailyLimitReached == true) {
+            Toast.makeText(context, "You've used today's free scans. Upgrade for unlimited scans.", Toast.LENGTH_LONG).show()
+            viewModel.clearDailyLimitSignal()
         }
     }
 
@@ -438,7 +505,7 @@ fun SnapTextApp(
                         onViewAllScans = { viewModel.navigateTo(Screen.History) },
                         onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
                         onUpgradeClick = { activateTestUpgrade() },
-                        planName = if (connectedAccount?.plan != null && connectedAccount?.plan != "free") "Premium" else "Free"
+                        planName = if (isPremiumAccount) "Premium" else "Free"
                     )
                 }
 
@@ -467,7 +534,15 @@ fun SnapTextApp(
                         onAccountClick = { viewModel.navigateTo(Screen.Account) },
                         onHistoryClick = { viewModel.navigateTo(Screen.History) },
                         onPrivacyClick = { openAccountWebsite("/privacy") },
-                        onHelpClick = { Toast.makeText(context, "Help and feedback will be available soon.", Toast.LENGTH_SHORT).show() }
+                        onHelpClick = { Toast.makeText(context, "Help and feedback will be available soon.", Toast.LENGTH_SHORT).show() },
+                        isPremium = isPremiumAccount,
+                        scansRemainingToday = scansRemainingToday,
+                        daysUntilExpiry = daysUntilExpiry(connectedAccount?.expiresAt),
+                        isLifetime = connectedAccount?.plan == "lifetime",
+                        onUsageClick = {
+                            if (!isPremiumAccount) showPremiumSheet = true
+                            else viewModel.navigateTo(Screen.Account)
+                        }
                     )
                 }
 
@@ -489,9 +564,11 @@ fun SnapTextApp(
                                 Toast.makeText(context, "Signed out of SnapText.", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        onDeleteAccountClick = { openAccountWebsite("/account") },
+                        onDeleteAccountClick = { deleteAccount() },
                         currentPlan = connectedAccount?.plan ?: "free",
-                        photoUrl = connectedAccount?.photoUrl
+                        photoUrl = connectedAccount?.photoUrl,
+                        signInProvider = connectedAccount?.signInProvider,
+                        isDeletingAccount = deletingAccount
                     )
                 }
 
