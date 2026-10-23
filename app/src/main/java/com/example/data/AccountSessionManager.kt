@@ -116,6 +116,20 @@ class AccountSessionManager(context: Context) {
         executeJson(request)
     }
 
+    fun createCheckoutUrl(plan: String): String {
+        val token = savedToken() ?: throw IllegalStateException("Connect your SnapText account first.")
+        val body = JSONObject().put("plan", plan).toString().toRequestBody(jsonType)
+        val request = Request.Builder().url("$WEBSITE_URL/api/app-session/checkout")
+            .header("Authorization", "Bearer $token")
+            .post(body).build()
+        val json = executeJson(request)
+        val checkoutUrl = json.optString("checkout_url")
+        if (!checkoutUrl.startsWith("https://")) {
+            throw IllegalStateException("The payment provider returned an invalid checkout link.")
+        }
+        return checkoutUrl
+    }
+
     fun simulateTestUpgrade(plan: String = "pro_monthly") {
         val token = savedToken() ?: throw IllegalStateException("Connect your SnapText account first.")
         val body = JSONObject().put("plan", plan).toString().toRequestBody(jsonType)
