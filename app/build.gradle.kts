@@ -16,8 +16,8 @@ android {
     applicationId = "com.aistudio.snaptext.kmqvrx"
     minSdk = 24
     targetSdk = 36
-    versionCode = 2
-    versionName = "1.1.0"
+    versionCode = providers.gradleProperty("appVersionCode").orNull?.toIntOrNull() ?: 2
+    versionName = providers.gradleProperty("appVersionName").orNull ?: "1.1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
