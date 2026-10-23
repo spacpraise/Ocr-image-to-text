@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.DataUsage
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,6 +44,12 @@ fun SettingsScreen(
     onHistoryClick: () -> Unit = {},
     onPrivacyClick: () -> Unit = {},
     onHelpClick: () -> Unit = {},
+    // --- Usage summary (PREFERENCES section) ---
+    isPremium: Boolean = false,
+    scansRemainingToday: Int = 3,
+    daysUntilExpiry: Int? = null,
+    isLifetime: Boolean = false,
+    onUsageClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
@@ -85,6 +92,13 @@ fun SettingsScreen(
                     SettingsRow(Icons.Outlined.BrightnessAuto, "Appearance", themeLabel(currentTheme)) { showThemePicker = true }
                     SettingsDivider()
                     SettingsRow(Icons.Outlined.History, "History", null, onHistoryClick)
+                    SettingsDivider()
+                    SettingsRow(
+                        icon = Icons.Outlined.DataUsage,
+                        title = "Usage",
+                        trailing = usageSummary(isPremium, scansRemainingToday, isLifetime, daysUntilExpiry),
+                        onClick = onUsageClick
+                    )
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -97,6 +111,14 @@ fun SettingsScreen(
                     SettingsRow(Icons.Outlined.HelpOutline, "Help & feedback", null, onHelpClick)
                 }
             }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "Created by Spac Industries",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
             Spacer(Modifier.height(12.dp))
         }
     }
@@ -120,6 +142,26 @@ fun SettingsScreen(
             confirmButton = { TextButton(onClick = { showThemePicker = false }) { Text("Done") } }
         )
     }
+}
+
+/**
+ * Builds the compact trailing label for the Usage row:
+ * - Free: "3 left today" (or "0 left today" once exhausted)
+ * - Premium + lifetime: "Lifetime"
+ * - Premium + monthly/yearly with a known expiry: "X days left"
+ * - Premium with no known expiry yet: "Unlimited"
+ */
+private fun usageSummary(
+    isPremium: Boolean,
+    scansRemainingToday: Int,
+    isLifetime: Boolean,
+    daysUntilExpiry: Int?
+): String {
+    if (!isPremium) {
+        return "${scansRemainingToday.coerceAtLeast(0)} left today"
+    }
+    if (isLifetime) return "Lifetime"
+    return daysUntilExpiry?.let { "$it ${if (it == 1) "day" else "days"} left" } ?: "Unlimited"
 }
 
 @Composable
@@ -148,7 +190,13 @@ private fun SettingsRow(icon: androidx.compose.ui.graphics.vector.ImageVector, t
         Spacer(Modifier.width(10.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
         if (trailing != null) {
-            Text(trailing, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = trailing,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
             Spacer(Modifier.width(8.dp))
         }
         Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(26.dp))
