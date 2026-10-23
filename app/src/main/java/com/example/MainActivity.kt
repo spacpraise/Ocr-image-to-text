@@ -407,7 +407,7 @@ fun SnapTextApp(
                         email = connectedAccount?.email,
                         onAccountClick = { viewModel.navigateTo(Screen.Account) },
                         onHistoryClick = { viewModel.navigateTo(Screen.History) },
-                        onPrivacyClick = { Toast.makeText(context, "Privacy policy will be available on the website.", Toast.LENGTH_SHORT).show() },
+                        onPrivacyClick = { openAccountWebsite("/privacy") },
                         onHelpClick = { Toast.makeText(context, "Help and feedback will be available soon.", Toast.LENGTH_SHORT).show() }
                     )
                 }
