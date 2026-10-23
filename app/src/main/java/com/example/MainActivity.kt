@@ -237,7 +237,6 @@ fun SnapTextApp(
                     return@launch
                 }
                 val checkoutUrl = withContext(Dispatchers.IO) { sessionManager.createCheckoutUrl(plan) }
-                showPremiumSheet = false
                 CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(checkoutUrl))
             } catch (e: Exception) {
                 Toast.makeText(context, e.message ?: "Could not start checkout. Please try again.", Toast.LENGTH_LONG).show()
