@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +31,9 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -93,6 +98,8 @@ fun HistoryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var scanToDelete by remember { mutableStateOf<ScanEntity?>(null) }
+    var gridMode by remember { mutableStateOf(false) }
+    var newestFirst by remember { mutableStateOf(true) }
     val historyEntries = remember(scans) {
         scans.groupBy { scan -> scan.batchId ?: "single:${scan.id}" }
             .values
@@ -105,7 +112,7 @@ fun HistoryScreen(
                     timestamp = pages.maxOf { it.timestamp }
                 )
             }
-            .sortedByDescending { it.timestamp }
+            .let { entries -> if (newestFirst) entries.sortedByDescending { it.timestamp } else entries.sortedBy { it.timestamp } }
     }
     val dateGroups = remember(historyEntries) {
         historyEntries.groupBy { historyDateLabel(it.timestamp) }
@@ -195,7 +202,22 @@ fun HistoryScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().widthIn(max = 680.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { newestFirst = !newestFirst }, modifier = Modifier.size(40.dp).testTag("history_sort_order")) {
+                    Icon(Icons.Filled.SwapVert, contentDescription = if (newestFirst) "Newest first; switch to oldest first" else "Oldest first; switch to newest first")
+                }
+                IconButton(onClick = { gridMode = false }, modifier = Modifier.size(40.dp).testTag("history_list_view")) {
+                    Icon(Icons.Filled.ViewList, contentDescription = "List view", tint = if (!gridMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                IconButton(onClick = { gridMode = true }, modifier = Modifier.size(40.dp).testTag("history_grid_view")) {
+                    Icon(Icons.Filled.GridView, contentDescription = "Grid view", tint = if (gridMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
 
             // Count badge
             Row(
@@ -222,84 +244,44 @@ fun HistoryScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             // Scans List
-            if (scans.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 80.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(64.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Filled.History,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
+            if (historyEntries.isEmpty()) {
+                Box(Modifier.fillMaxSize().padding(bottom = 80.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                        Surface(Modifier.size(56.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
+                            Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.History, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp)) }
                         }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        Text(
-                            text = if (searchQuery.isNotEmpty()) "No matching scans" else "No scan history",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = if (searchQuery.isNotEmpty())
-                                "Try searching for a different word or clear the filter."
-                            else
-                                "Images and documents you scan will be preserved here for instant access.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 32.dp)
-                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(if (searchQuery.isNotEmpty()) "No matching scans" else "No scan history", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(6.dp))
+                        Text(if (searchQuery.isNotEmpty()) "Try another word or clear the search." else "Images and documents you scan will appear here.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp))
+                    }
+                }
+            } else if (gridMode) {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 148.dp),
+                    modifier = Modifier.fillMaxSize().widthIn(max = 680.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
+                ) {
+                    items(historyEntries, key = { it.key }) { entry ->
+                        HistoryGridCard(entry.scan, entry.pages.size, entry.timestamp) { onReopenScan(entry.scan) }
                     }
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .widthIn(max = 680.dp),
+                    modifier = Modifier.fillMaxSize().widthIn(max = 680.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
                 ) {
                     dateGroups.forEach { (dateLabel, entries) ->
                         item(key = "date_$dateLabel") {
-                            Text(
-                                text = dateLabel,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-                            )
+                            Text(dateLabel, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 6.dp, bottom = 2.dp))
                         }
                         items(entries, key = { it.key }) { entry ->
                             val scan = entry.scan
                             val combinedText = entry.pages.joinToString("\n\n") { it.extractedText }.trim()
-                            HistoryScanCard(
-                                scan = scan,
-                                pageCount = entry.pages.size,
-                                timestamp = entry.timestamp,
-                                onReopen = { onReopenScan(scan) },
-                                onCopy = { copyText(combinedText, scan.title) },
-                                onDelete = { scanToDelete = scan }
-                            )
+                            HistoryScanCard(scan = scan, pageCount = entry.pages.size, timestamp = entry.timestamp, onReopen = { onReopenScan(scan) }, onCopy = { copyText(combinedText, scan.title) }, onDelete = { scanToDelete = scan })
                         }
                     }
                 }
@@ -369,6 +351,23 @@ private fun historyDateLabel(timestamp: Long): String {
         0 -> "Today"
         1 -> "Yesterday"
         else -> SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(timestamp))
+    }
+}
+
+@Composable
+private fun HistoryGridCard(scan: ScanEntity, pageCount: Int, timestamp: Long, onClick: () -> Unit) {
+    Card(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+        Column(Modifier.fillMaxWidth().padding(9.dp)) {
+            val thumbFile = (scan.thumbnailPath ?: scan.imagePath)?.let { File(it) }
+            Surface(Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(9.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                if (thumbFile != null && thumbFile.exists()) AsyncImage(model = thumbFile, contentDescription = "Scan thumbnail", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                else Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Description, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(32.dp)) }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(if (pageCount > 1) "${scan.title} · ${pageCount} pages" else scan.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(3.dp))
+            Text(SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(timestamp)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        }
     }
 }
 
