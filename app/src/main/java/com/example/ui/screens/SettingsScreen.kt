@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.data.AppThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +38,7 @@ fun SettingsScreen(
     onUpgradeClick: () -> Unit = {},
     displayName: String? = null,
     email: String? = null,
+    photoUrl: String? = null,
     onAccountClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
     onPrivacyClick: () -> Unit = {},
@@ -64,7 +66,7 @@ fun SettingsScreen(
                 shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    ProfileAvatar(displayName, 46)
+                    ProfileAvatar(displayName, 46, photoUrl)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(displayName?.takeIf { it.isNotBlank() } ?: "Your account", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -156,12 +158,16 @@ private fun themeLabel(mode: AppThemeMode) = when (mode) {
 }
 
 @Composable
-fun ProfileAvatar(name: String?, size: Int) {
+fun ProfileAvatar(name: String?, size: Int, photoUrl: String? = null) {
     val initials = name?.trim()?.split(Regex("\\s+"))?.filter { it.isNotBlank() }?.take(2)
         ?.mapNotNull { it.firstOrNull()?.uppercaseChar() }?.joinToString("")?.takeIf { it.isNotBlank() } ?: "ST"
     Surface(shape = CircleShape, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(size.dp)) {
         Box(contentAlignment = Alignment.Center) {
-            Text(initials, color = MaterialTheme.colorScheme.surface, fontWeight = FontWeight.SemiBold, fontSize = (size * 0.28).sp)
+            if (!photoUrl.isNullOrBlank()) {
+                AsyncImage(model = photoUrl, contentDescription = "Profile photo", contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            } else {
+                Text(initials, color = MaterialTheme.colorScheme.surface, fontWeight = FontWeight.SemiBold, fontSize = (size * 0.28).sp)
+            }
         }
     }
 }
