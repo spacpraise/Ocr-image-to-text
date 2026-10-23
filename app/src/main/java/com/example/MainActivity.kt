@@ -276,8 +276,17 @@ fun SnapTextApp(
     }
 
     LaunchedEffect(Unit) {
-        runCatching { withContext(Dispatchers.IO) { sessionManager.refreshAccount() } }
-            .onSuccess { connectedAccount = it }
+        runCatching {
+            val account = withContext(Dispatchers.IO) { sessionManager.refreshAccount() }
+            if (account != null) {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        sessionManager.reportInstalledVersion(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
+                    }
+                }
+            }
+            account
+        }.onSuccess { connectedAccount = it }
             .onFailure { connectedAccount = null }
         availableUpdate = fetchLatestAppUpdate(context)
         // Anonymous, one-time-per-install download/open ping -- fires even for users
@@ -303,6 +312,11 @@ fun SnapTextApp(
         accountBusy = true
         try {
             connectedAccount = withContext(Dispatchers.IO) { sessionManager.exchangeCode(code) }
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    sessionManager.reportInstalledVersion(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
+                }
+            }
             Toast.makeText(context, "SnapText account connected securely.", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(context, e.message ?: "Could not connect your account.", Toast.LENGTH_LONG).show()
@@ -316,8 +330,17 @@ fun SnapTextApp(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 accountScope.launch {
-                    runCatching { withContext(Dispatchers.IO) { sessionManager.refreshAccount() } }
-                        .onSuccess { connectedAccount = it }
+                    runCatching {
+                        val account = withContext(Dispatchers.IO) { sessionManager.refreshAccount() }
+                        if (account != null) {
+                            runCatching {
+                                withContext(Dispatchers.IO) {
+                                    sessionManager.reportInstalledVersion(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
+                                }
+                            }
+                        }
+                        account
+                    }.onSuccess { connectedAccount = it }
                         .onFailure { connectedAccount = null }
                     if (availableUpdate == null) {
                         availableUpdate = fetchLatestAppUpdate(context)
