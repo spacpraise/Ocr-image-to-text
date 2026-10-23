@@ -1,0 +1,86 @@
+name: Publish SnapText Android release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, for example 1.2.0 (without v)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must be in major.minor.patch format, such as 1.2.0" >&2
+            exit 1
+          fi
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH))
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Configure Android release signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SNAPTEXT_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.SNAPTEXT_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.SNAPTEXT_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "Missing SNAPTEXT_KEYSTORE_BASE64, SNAPTEXT_STORE_PASSWORD, or SNAPTEXT_KEY_PASSWORD GitHub Actions secrets." >&2
+            echo "Add the same release signing keystore used for the app already installed on users' devices." >&2
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/snaptext-upload.jks"
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/snaptext-upload.jks" >> "$GITHUB_ENV"
+          echo "STORE_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Build signed release APK
+        run: gradle --no-daemon :app:assembleRelease -PappVersionName="${{ steps.version.outputs.name }}" -PappVersionCode="${{ steps.version.outputs.code }}"
+
+      - name: Rename APK
+        shell: bash
+        run: cp app/build/outputs/apk/release/app-release.apk "SnapText-${{ steps.version.outputs.name }}.apk"
+
+      - name: Run unit tests
+        run: gradle --no-daemon :app:testDebugUnitTest
+
+      - name: Publish GitHub Release and APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', inputs.version) || github.ref_name }}
+          name: SnapText v${{ steps.version.outputs.name }}
+          generate_release_notes: true
+          files: SnapText-${{ steps.version.outputs.name }}.apk
