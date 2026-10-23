@@ -133,8 +133,8 @@ fun HistoryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Scan History",
-                        style = MaterialTheme.typography.titleLarge,
+                        text = "History",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -152,10 +152,10 @@ fun HistoryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(0.dp))
 
             // Search Bar
             OutlinedTextField(
@@ -203,19 +203,19 @@ fun HistoryScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(0.dp))
             Row(
                 modifier = Modifier.fillMaxWidth().widthIn(max = 680.dp),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { newestFirst = !newestFirst }, modifier = Modifier.size(40.dp).testTag("history_sort_order")) {
+                IconButton(onClick = { newestFirst = !newestFirst }, modifier = Modifier.size(36.dp).testTag("history_sort_order")) {
                     Icon(Icons.Filled.SwapVert, contentDescription = if (newestFirst) "Newest first; switch to oldest first" else "Oldest first; switch to newest first")
                 }
-                IconButton(onClick = { gridMode = false }, modifier = Modifier.size(40.dp).testTag("history_list_view")) {
+                IconButton(onClick = { gridMode = false }, modifier = Modifier.size(36.dp).testTag("history_list_view")) {
                     Icon(Icons.Filled.ViewList, contentDescription = "List view", tint = if (!gridMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                IconButton(onClick = { gridMode = true }, modifier = Modifier.size(40.dp).testTag("history_grid_view")) {
+                IconButton(onClick = { gridMode = true }, modifier = Modifier.size(36.dp).testTag("history_grid_view")) {
                     Icon(Icons.Filled.GridView, contentDescription = "Grid view", tint = if (gridMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -242,7 +242,7 @@ fun HistoryScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Scans List
             if (historyEntries.isEmpty()) {
@@ -272,7 +272,7 @@ fun HistoryScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().widthIn(max = 680.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
                 ) {
                     dateGroups.forEach { (dateLabel, entries) ->
@@ -385,26 +385,26 @@ private fun HistoryScanCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(10.dp))
             .clickable(onClick = onReopen)
             .testTag("history_item_${scan.id}"),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(9.dp),
+                .padding(horizontal = 7.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Thumbnail
             Surface(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(7.dp)),
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
@@ -428,13 +428,13 @@ private fun HistoryScanCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(9.dp))
+            Spacer(modifier = Modifier.width(7.dp))
 
             // Details
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = if (pageCount > 1) "${scan.title} · ${pageCount} pages" else scan.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -447,11 +447,11 @@ private fun HistoryScanCard(
                     text = scan.extractedText.ifBlank { "No text recognized" },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 val formattedDate = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
                     .format(Date(timestamp))
@@ -483,7 +483,7 @@ private fun HistoryScanCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = onCopy,
-                    modifier = Modifier.testTag("history_copy_${scan.id}")
+                    modifier = Modifier.size(34.dp).testTag("history_copy_${scan.id}")
                 ) {
                     Icon(
                         imageVector = Icons.Filled.ContentCopy,
@@ -495,7 +495,7 @@ private fun HistoryScanCard(
 
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.testTag("history_delete_${scan.id}")
+                    modifier = Modifier.size(34.dp).testTag("history_delete_${scan.id}")
                 ) {
                     Icon(
                         imageVector = Icons.Filled.DeleteOutline,
