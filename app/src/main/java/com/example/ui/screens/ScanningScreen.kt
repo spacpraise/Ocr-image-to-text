@@ -588,6 +588,7 @@ private fun ImageSelectableTextOverlay(
     var selectedIndices by remember(words) { mutableStateOf(setOf<Int>()) }
     var dragAnchorIndex by remember(words) { mutableStateOf<Int?>(null) }
     var dragStart by remember { mutableStateOf<Offset?>(null) }
+    var draggingHandle by remember { mutableStateOf<String?>(null) }
     var pageSwipeHandled by remember { mutableStateOf(false) }
 
     fun wordsRectsInBox(boxWidthPx: Float, boxHeightPx: Float): List<androidx.compose.ui.geometry.Rect> {
@@ -613,11 +614,21 @@ private fun ImageSelectableTextOverlay(
         }
     }
 
+    fun selectedText(): String = selectedIndices.sorted().joinToString(" ") { words[it].text }
+
     fun copySelection() {
         if (selectedIndices.isEmpty()) return
-        val text = selectedIndices.sorted().joinToString(" ") { words[it].text }
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("Selected text", text))
+        clipboard.setPrimaryClip(ClipData.newPlainText("Selected text", selectedText()))
+    }
+
+    fun shareSelection() {
+        if (selectedIndices.isEmpty()) return
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, selectedText())
+        }
+        context.startActivity(Intent.createChooser(intent, "Share selected text"))
     }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -652,12 +663,37 @@ private fun ImageSelectableTextOverlay(
                                 onDragStart = { offset ->
                                     dragStart = offset
                                     pageSwipeHandled = false
-                                    val idx = rects.indexOfFirst { it.contains(offset) }
-                                    dragAnchorIndex = if (idx >= 0) idx else null
-                                    selectedIndices = if (idx >= 0) setOf(idx) else emptySet()
+                                    val selected = selectedIndices.sorted()
+                                    val firstRect = selected.firstOrNull()?.let { rects.getOrNull(it) }
+                                    val lastRect = selected.lastOrNull()?.let { rects.getOrNull(it) }
+                                    val handleHitRadius = 28.dp.toPx()
+                                    draggingHandle = when {
+                                        firstRect != null && (offset - Offset(firstRect.left, firstRect.bottom)).getDistance() <= handleHitRadius -> "start"
+                                        lastRect != null && (offset - Offset(lastRect.right, lastRect.bottom)).getDistance() <= handleHitRadius -> "end"
+                                        else -> null
+                                    }
+                                    if (draggingHandle != null) {
+                                        dragAnchorIndex = null
+                                    } else {
+                                        val idx = rects.indexOfFirst { it.contains(offset) }
+                                        dragAnchorIndex = if (idx >= 0) idx else null
+                                        selectedIndices = if (idx >= 0) setOf(idx) else emptySet()
+                                    }
                                 },
                                 onDrag = { change, _ ->
                                     val start = dragStart
+                                    if (draggingHandle != null) {
+                                        val nearest = rects.indices.minByOrNull { idx ->
+                                            val rect = rects[idx]
+                                            (Offset((rect.left + rect.right) / 2f, (rect.top + rect.bottom) / 2f) - change.position).getDistance()
+                                        }
+                                        if (nearest != null && selectedIndices.isNotEmpty()) {
+                                            val selected = selectedIndices.sorted()
+                                            val anchor = if (draggingHandle == "start") selected.last() else selected.first()
+                                            selectedIndices = if (nearest <= anchor) (nearest..anchor).toSet() else (anchor..nearest).toSet()
+                                        }
+                                        return@detectDragGestures
+                                    }
                                     if (start != null && !pageSwipeHandled &&
                                         kotlin.math.abs(change.position.x - start.x) > 64.dp.toPx() &&
                                         kotlin.math.abs(change.position.x - start.x) > kotlin.math.abs(change.position.y - start.y)
@@ -676,6 +712,7 @@ private fun ImageSelectableTextOverlay(
                                 },
                                 onDragEnd = {
                                     dragStart = null
+                                    draggingHandle = null
                                     pageSwipeHandled = false
                                     /* selection stays until cleared */
                                 }
@@ -686,11 +723,20 @@ private fun ImageSelectableTextOverlay(
                         rects.forEachIndexed { idx, rect ->
                             if (idx in selectedIndices) {
                                 drawRect(
-                                    color = Color(0xFF9A9A9A).copy(alpha = 0.35f),
+                                    color = Color(0xFF1687FF).copy(alpha = 0.48f),
                                     topLeft = Offset(rect.left, rect.top),
                                     size = Size(rect.width, rect.height)
                                 )
                             }
+                        }
+                        val selected = selectedIndices.sorted()
+                        val firstRect = selected.firstOrNull()?.let { rects.getOrNull(it) }
+                        val lastRect = selected.lastOrNull()?.let { rects.getOrNull(it) }
+                        if (firstRect != null && lastRect != null) {
+                            drawCircle(Color.White, radius = 10.dp.toPx(), center = Offset(firstRect.left, firstRect.bottom))
+                            drawCircle(Color(0xFF087BEE), radius = 7.dp.toPx(), center = Offset(firstRect.left, firstRect.bottom))
+                            drawCircle(Color.White, radius = 10.dp.toPx(), center = Offset(lastRect.right, lastRect.bottom))
+                            drawCircle(Color(0xFF087BEE), radius = 7.dp.toPx(), center = Offset(lastRect.right, lastRect.bottom))
                         }
                     }
                 }
@@ -719,6 +765,11 @@ private fun ImageSelectableTextOverlay(
                             Icon(Icons.Filled.SelectAll, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("Select All")
+                        }
+                        TextButton(onClick = { shareSelection() }) {
+                            Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Share")
                         }
                         TextButton(onClick = { copySelection() }) {
                             Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
