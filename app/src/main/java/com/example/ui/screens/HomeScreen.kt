@@ -87,11 +87,11 @@ fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        verticalArrangement = Arrangement.spacedBy(22.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            start = 22.dp,
-            end = 22.dp,
-            top = 18.dp,
+            start = 16.dp,
+            end = 16.dp,
+            top = 14.dp,
             bottom = 96.dp
         )
     ) {
@@ -149,7 +149,7 @@ fun HomeScreen(
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     CategoryItemCard(
                         title = "Image",
@@ -503,13 +503,13 @@ fun RecentScanCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Thumbnail with optimization
             Surface(
                 modifier = Modifier
-                    .size(58.dp)
+                    .size(50.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
@@ -534,7 +534,7 @@ fun RecentScanCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
             // Details
             Column(modifier = Modifier.weight(1f)) {
