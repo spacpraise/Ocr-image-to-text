@@ -97,6 +97,25 @@ class AccountSessionManager(context: Context) {
         }
     }
 
+    /**
+     * Reports the currently installed app build for the signed-in app session.
+     * This is best-effort telemetry for the website's account/download status page.
+     */
+    fun reportInstalledVersion(versionName: String, versionCode: Int) {
+        val token = savedToken() ?: return
+        val body = JSONObject()
+            .put("versionName", versionName)
+            .put("versionCode", versionCode)
+            .toString()
+            .toRequestBody(jsonType)
+        val request = Request.Builder()
+            .url("$WEBSITE_URL/api/app-session/version")
+            .header("Authorization", "Bearer $token")
+            .post(body)
+            .build()
+        executeJson(request)
+    }
+
     fun simulateTestUpgrade(plan: String = "pro_monthly") {
         val token = savedToken() ?: throw IllegalStateException("Connect your SnapText account first.")
         val body = JSONObject().put("plan", plan).toString().toRequestBody(jsonType)
