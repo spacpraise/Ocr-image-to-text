@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun UpdateAvailableSheet(
     version: String,
+    downloadProgress: Int? = null,
     onUpdate: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -64,8 +65,20 @@ fun UpdateAvailableSheet(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (downloadProgress != null) {
+                androidx.compose.material3.LinearProgressIndicator(
+                    progress = { (downloadProgress.coerceIn(0, 100) / 100f) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    if (downloadProgress >= 100) "Preparing installer…" else "Downloading update… $downloadProgress%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Button(
                 onClick = onUpdate,
+                enabled = downloadProgress == null,
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -74,7 +87,9 @@ fun UpdateAvailableSheet(
                 Spacer(Modifier.size(8.dp))
                 Text("Install update", fontWeight = FontWeight.SemiBold)
             }
-            TextButton(onClick = onDismiss) { Text("Not now") }
+            if (downloadProgress == null) {
+                TextButton(onClick = onDismiss) { Text("Not now") }
+            }
         }
     }
 }
