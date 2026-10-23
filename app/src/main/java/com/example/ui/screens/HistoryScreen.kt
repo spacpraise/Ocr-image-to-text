@@ -101,7 +101,7 @@ fun HistoryScreen(
     var scanToDelete by remember { mutableStateOf<ScanEntity?>(null) }
     var gridMode by remember { mutableStateOf(false) }
     var newestFirst by remember { mutableStateOf(true) }
-    val historyEntries = remember(scans) {
+    val historyEntries = remember(scans, newestFirst) {
         scans.groupBy { scan -> scan.batchId ?: "single:${scan.id}" }
             .values
             .map { pages ->
