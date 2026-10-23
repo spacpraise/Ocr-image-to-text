@@ -93,6 +93,15 @@ class AccountSessionManager(context: Context) {
         }
     }
 
+    fun simulateTestUpgrade(plan: String = "pro_monthly") {
+        val token = savedToken() ?: throw IllegalStateException("Connect your SnapText account first.")
+        val body = JSONObject().put("plan", plan).toString().toRequestBody(jsonType)
+        val request = Request.Builder().url("$WEBSITE_URL/api/app-session/test-upgrade")
+            .header("Authorization", "Bearer $token")
+            .post(body).build()
+        executeJson(request)
+    }
+
     fun signOut() {
         val token = savedToken()
         if (token != null) {
