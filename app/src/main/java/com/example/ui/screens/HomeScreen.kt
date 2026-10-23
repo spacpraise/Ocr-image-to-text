@@ -254,7 +254,9 @@ fun HomeScreen(
                             text = "Choose an option",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp
+                            fontSize = 15.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -287,7 +289,10 @@ fun HomeScreen(
                             Text(
                                 text = "Camera",
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Visible
                             )
                         }
 
@@ -313,7 +318,10 @@ fun HomeScreen(
                             Text(
                                 text = "Gallery",
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Visible
                             )
                         }
                     }
@@ -346,7 +354,9 @@ fun HomeScreen(
                             text = "View All",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
@@ -477,7 +487,9 @@ private fun CategoryItemCard(
                 text = title,
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -569,7 +581,9 @@ fun RecentScanCard(
                     Text(
                         text = formattedDate,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "•",
@@ -583,11 +597,12 @@ fun RecentScanCard(
                             "${scan.characterCount} chars",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
         }
     }
 }
-       
