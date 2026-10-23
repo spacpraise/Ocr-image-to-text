@@ -30,6 +30,10 @@ jobs:
           else
             VERSION="${GITHUB_REF_NAME#v}"
           fi
+          # Be forgiving of accidental spaces or a leading v in the manual input.
+          VERSION="$(printf '%s' "$VERSION" | tr -d '[:space:]')"
+          VERSION="${VERSION#v}"
+          VERSION="${VERSION#V}"
           if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Version must be in major.minor.patch format, such as 1.2.0" >&2
             exit 1
