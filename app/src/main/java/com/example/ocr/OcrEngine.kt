@@ -6,8 +6,6 @@ import android.util.Log
 import android.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -84,14 +82,26 @@ Analyze the provided image and extract all readable text according to these stri
         return try {
             withTimeout(10_000L) {
                 val jsonString = withContext(Dispatchers.IO) {
+                    val maxDimension = 1600
+                    val largest = maxOf(bitmap.width, bitmap.height)
+                    val requestBitmap = if (largest > maxDimension) {
+                        val scale = maxDimension.toFloat() / largest
+                        Bitmap.createScaledBitmap(
+                            bitmap,
+                            (bitmap.width * scale).toInt().coerceAtLeast(1),
+                            (bitmap.height * scale).toInt().coerceAtLeast(1),
+                            true
+                        )
+                    } else bitmap
                     val output = java.io.ByteArrayOutputStream()
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 85, output)
+                    requestBitmap.compress(Bitmap.CompressFormat.JPEG, 82, output)
+                    if (requestBitmap !== bitmap) requestBitmap.recycle()
                     val encoded = Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP)
                     val connection = (URL("https://snaptext-pearl.vercel.app/api/ocr").openConnection() as HttpURLConnection)
                     try {
                         connection.requestMethod = "POST"
-                        connection.connectTimeout = 4_000
-                        connection.readTimeout = 8_500
+                        connection.connectTimeout = 2_000
+                        connection.readTimeout = 7_500
                         connection.doOutput = true
                         connection.setRequestProperty("Content-Type", "application/json")
                         connection.setRequestProperty("Accept", "application/json")
