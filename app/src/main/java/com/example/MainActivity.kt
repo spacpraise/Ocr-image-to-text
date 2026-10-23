@@ -64,7 +64,6 @@ import com.example.util.configureAppCheck
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
-import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
