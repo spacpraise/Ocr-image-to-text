@@ -124,6 +124,8 @@ class MainActivity : ComponentActivity() {
         private set
     var incomingAuthCode by mutableStateOf<String?>(null)
         private set
+    var incomingUpdateRequest by mutableStateOf(false)
+        private set
 
     private fun readAuthCode(intent: Intent?) {
         val uri = intent?.data
@@ -132,11 +134,17 @@ class MainActivity : ComponentActivity() {
         } else null
     }
 
+    private fun readUpdateRequest(intent: Intent?) {
+        val uri = intent?.data
+        incomingUpdateRequest = uri?.scheme == "snaptext" && uri.host == "update"
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         incomingShareIntent = intent.takeIf { it.action == Intent.ACTION_SEND || it.action == Intent.ACTION_SEND_MULTIPLE }
         readAuthCode(intent)
+        readUpdateRequest(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -146,6 +154,7 @@ class MainActivity : ComponentActivity() {
         configureAppCheck(this, intent)
         incomingShareIntent = intent.takeIf { it.action == Intent.ACTION_SEND || it.action == Intent.ACTION_SEND_MULTIPLE }
         readAuthCode(intent)
+        readUpdateRequest(intent)
         enableEdgeToEdge()
         setContent {
             val viewModel: MainViewModel = viewModel()
@@ -161,7 +170,9 @@ class MainActivity : ComponentActivity() {
                     incomingShareIntent = incomingShareIntent,
                     onShareIntentHandled = { incomingShareIntent = null },
                     incomingAuthCode = incomingAuthCode,
-                    onAuthCodeHandled = { incomingAuthCode = null }
+                    onAuthCodeHandled = { incomingAuthCode = null },
+                    incomingUpdateRequest = incomingUpdateRequest,
+                    onUpdateRequestHandled = { incomingUpdateRequest = false }
                 )
             }
         }
@@ -176,6 +187,8 @@ fun SnapTextApp(
     onShareIntentHandled: () -> Unit = {},
     incomingAuthCode: String? = null,
     onAuthCodeHandled: () -> Unit = {},
+    incomingUpdateRequest: Boolean = false,
+    onUpdateRequestHandled: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -272,6 +285,17 @@ fun SnapTextApp(
         if (prefs.markInstallPingSentIfNeeded()) {
             withContext(Dispatchers.IO) { sessionManager.pingInstallEvent() }
         }
+    }
+
+    LaunchedEffect(incomingUpdateRequest) {
+        if (!incomingUpdateRequest) return@LaunchedEffect
+        val update = fetchLatestAppUpdate(context)
+        if (update != null) {
+            availableUpdate = update
+        } else {
+            Toast.makeText(context, "SnapText is already up to date, or the latest APK is not available yet.", Toast.LENGTH_LONG).show()
+        }
+        onUpdateRequestHandled()
     }
 
     LaunchedEffect(incomingAuthCode) {
