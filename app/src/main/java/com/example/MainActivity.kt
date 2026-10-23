@@ -226,20 +226,22 @@ fun SnapTextApp(
         }
     }
 
-    fun activateTestUpgrade(plan: String = "pro_monthly") {
+    fun startCheckout(plan: String) {
         accountScope.launch {
             try {
                 val account = connectedAccount ?: withContext(Dispatchers.IO) { sessionManager.refreshAccount() }
+                connectedAccount = account
                 if (account == null) {
-                    Toast.makeText(context, "Connect your SnapText account first to test an upgrade.", Toast.LENGTH_LONG).show()
+                    showPremiumSheet = false
+                    Toast.makeText(context, "Connect your SnapText account before upgrading.", Toast.LENGTH_LONG).show()
                     openConnectWebsite()
                     return@launch
                 }
-                withContext(Dispatchers.IO) { sessionManager.simulateTestUpgrade(plan) }
-                connectedAccount = withContext(Dispatchers.IO) { sessionManager.refreshAccount() }
-                Toast.makeText(context, "Test upgrade activated. Premium is now enabled.", Toast.LENGTH_LONG).show()
+                val checkoutUrl = withContext(Dispatchers.IO) { sessionManager.createCheckoutUrl(plan) }
+                showPremiumSheet = false
+                CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(checkoutUrl))
             } catch (e: Exception) {
-                Toast.makeText(context, e.message ?: "Test upgrade failed. Check that test upgrades are enabled.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, e.message ?: "Could not start checkout. Please try again.", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -551,7 +553,7 @@ fun SnapTextApp(
                         },
                         onViewAllScans = { viewModel.navigateTo(Screen.History) },
                         onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
-                        onUpgradeClick = { activateTestUpgrade() },
+                        onUpgradeClick = { showPremiumSheet = true },
                         planName = if (isPremiumAccount) "Premium" else "Free"
                     )
                 }
@@ -575,7 +577,7 @@ fun SnapTextApp(
                         storageInfo = storageInfo,
                         onClearAllScans = { viewModel.clearAllScans() },
                         onBack = { viewModel.handleBack() },
-                        onUpgradeClick = { activateTestUpgrade() },
+                        onUpgradeClick = { showPremiumSheet = true },
                         displayName = connectedAccount?.name,
                         email = connectedAccount?.email,
                         photoUrl = connectedAccount?.photoUrl,
@@ -599,7 +601,7 @@ fun SnapTextApp(
                         displayName = connectedAccount?.name,
                         email = connectedAccount?.email,
                         onBack = { viewModel.handleBack() },
-                        onUpgradeClick = { openAccountWebsite(if (connectedAccount == null) "/app-connect" else "/account/billing") },
+                        onUpgradeClick = { showPremiumSheet = true },
                         onSignInMethodClick = { if (connectedAccount == null) openConnectWebsite() else openAccountWebsite("/account") },
                         onChangePasswordClick = { openAccountWebsite("/forgot-password") },
                         onSignOutClick = {
@@ -724,8 +726,7 @@ fun SnapTextApp(
             PremiumPlansSheet(
                 onDismiss = { showPremiumSheet = false },
                 onContinue = { selectedPlan: SubscriptionPlan ->
-                    showPremiumSheet = false
-                    activateTestUpgrade(
+                    startCheckout(
                         when (selectedPlan) {
                             SubscriptionPlan.MONTHLY -> "pro_monthly"
                             SubscriptionPlan.YEARLY -> "pro_yearly"
