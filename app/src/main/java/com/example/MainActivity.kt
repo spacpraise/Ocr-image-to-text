@@ -78,11 +78,12 @@ private suspend fun fetchLatestAppUpdate(context: Context): AppUpdateInfo? = wit
         val json = JSONObject(payload)
         val latestCode = json.optInt("versionCode", 1)
         val version = json.optString("latestVersion", "1.0.0")
-        val downloadUrl = json.optString("downloadUrl", "")
-        if (latestCode > BuildConfig.VERSION_CODE && downloadUrl.startsWith("https://")) {
+        val apkUrl = json.optString("downloadUrl", "")
+        val downloadPageUrl = json.optString("downloadPageUrl", "https://snaptext-pearl.vercel.app/download")
+        if (latestCode > BuildConfig.VERSION_CODE && apkUrl.startsWith("https://") && downloadPageUrl.startsWith("https://")) {
             val dismissedCode = context.getSharedPreferences("app_updates", Context.MODE_PRIVATE)
                 .getInt("dismissed_version_code", 0)
-            if (latestCode > dismissedCode) AppUpdateInfo(version, latestCode, downloadUrl) else null
+            if (latestCode > dismissedCode) AppUpdateInfo(version, latestCode, downloadPageUrl) else null
         } else null
     } catch (_: Exception) {
         null
