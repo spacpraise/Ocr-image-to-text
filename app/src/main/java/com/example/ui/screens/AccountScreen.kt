@@ -35,12 +35,21 @@ fun AccountScreen(
     onDeleteAccountClick: () -> Unit,
     currentPlan: String = "free",
     photoUrl: String? = null,
+    // "google" or "email", from SnapTextAccount.signInProvider. Null shows a generic label
+    // rather than guessing -- see AccountSessionManager for where this is sourced.
+    signInProvider: String? = null,
+    isDeletingAccount: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
     var confirmDelete by remember { mutableStateOf(false) }
     val name = displayName?.takeIf { it.isNotBlank() } ?: "Your account"
     val address = email?.takeIf { it.isNotBlank() } ?: "No email connected"
+    val signInMethodLabel = when (signInProvider?.lowercase()) {
+        "google" -> "Google"
+        "email" -> "Email"
+        else -> "Connected account"
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -75,27 +84,56 @@ fun AccountScreen(
                         Text("CURRENT PLAN", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(planTitle(currentPlan), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                     }
-                    Button(onClick = onUpgradeClick, shape = CircleShape, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface, contentColor = MaterialTheme.colorScheme.surface), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)) {
-                        Text(if (currentPlan == "free") "Explore Pro" else "Premium", fontWeight = FontWeight.SemiBold)
+                    Button(
+                        onClick = onUpgradeClick,
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface, contentColor = MaterialTheme.colorScheme.surface),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+                    ) {
+                        Text(
+                            text = if (currentPlan == "free") "Explore Pro" else "Premium",
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AccountGroup {
-                    AccountRow(Icons.Outlined.Email, "Sign-in method", "Email", onSignInMethodClick)
+                    AccountRow(Icons.Outlined.Email, "Sign-in method", signInMethodLabel, onSignInMethodClick)
                     AccountDivider()
                     AccountRow(Icons.Outlined.Key, "Change password", null, onChangePasswordClick)
                 }
                 AccountGroup {
                     AccountRow(Icons.Outlined.Logout, "Sign out", null, onSignOutClick)
                     AccountDivider()
-                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).clickable { confirmDelete = true }.padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(24.dp))
+                            .clickable(enabled = !isDeletingAccount) { confirmDelete = true }
+                            .padding(horizontal = 14.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.size(38.dp)) {
-                            Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.DeleteOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                            Box(contentAlignment = Alignment.Center) {
+                                if (isDeletingAccount) {
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.error)
+                                } else {
+                                    Icon(Icons.Outlined.DeleteOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                }
+                            }
                         }
                         Spacer(Modifier.width(10.dp))
-                        Text("Delete account", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.error)
-                        Spacer(Modifier.weight(1f))
+                        Text(
+                            text = if (isDeletingAccount) "Deleting account…" else "Delete account",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
@@ -105,8 +143,12 @@ fun AccountScreen(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("Delete account?") },
-            text = { Text("Account deletion is not connected in the app yet.") },
-            confirmButton = { TextButton(onClick = { confirmDelete = false; onDeleteAccountClick() }) { Text("Continue") } },
+            text = { Text("This permanently deletes your account, subscription, and sign-in — this cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = { confirmDelete = false; onDeleteAccountClick() }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
         )
     }
@@ -133,7 +175,13 @@ private fun AccountRow(icon: androidx.compose.ui.graphics.vector.ImageVector, ti
         Spacer(Modifier.width(14.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
         if (trailing != null) {
-            Text(trailing, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = trailing,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
             Spacer(Modifier.width(8.dp))
         }
         Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(26.dp))
