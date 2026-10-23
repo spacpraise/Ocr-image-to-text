@@ -755,11 +755,6 @@ private fun ImageSelectableTextOverlay(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        "${selectedIndices.size} word${if (selectedIndices.size == 1) "" else "s"} selected",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                     Row {
                         TextButton(onClick = { selectedIndices = words.indices.toSet() }) {
                             Icon(Icons.Filled.SelectAll, contentDescription = null, modifier = Modifier.size(16.dp))
