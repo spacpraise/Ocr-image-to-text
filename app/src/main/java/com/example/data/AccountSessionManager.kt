@@ -205,10 +205,26 @@ class AccountSessionManager(context: Context) {
             val text = response.body?.string().orEmpty()
             if (!response.isSuccessful) {
                 if (response.code == 401) throw SessionExpiredException()
-                val message = runCatching { JSONObject(text).optString("error") }.getOrNull()
-                throw IllegalStateException(message?.takeIf { it.isNotBlank() } ?: "Could not connect to your SnapText account.")
+                val message = runCatching {
+                    val payload = JSONObject(text)
+                    payload.optString("error").takeIf { it.isNotBlank() }
+                        ?: payload.optString("message").takeIf { it.isNotBlank() }
+                }.getOrNull()
+                val endpoint = request.url.encodedPath
+                val fallback = if (endpoint.endsWith("/checkout")) {
+                    "Checkout service request failed (HTTP " + response.code + "). Please try again shortly."
+                } else {
+                    "SnapText account request failed (HTTP " + response.code + "). Please try again."
+                }
+                throw IllegalStateException(message ?: fallback)
             }
-            return JSONObject(text)
+            return try {
+                JSONObject(text)
+            } catch (_: Exception) {
+                val endpoint = request.url.encodedPath
+                val label = if (endpoint.endsWith("/checkout")) "checkout service" else "SnapText account service"
+                throw IllegalStateException("The " + label + " returned an invalid response. Please try again shortly.")
+            }
         }
     }
 
