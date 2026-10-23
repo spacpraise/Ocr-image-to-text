@@ -150,7 +150,7 @@ fun HistoryScreen(
                 .padding(horizontal = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(0.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Search Bar
             OutlinedTextField(
@@ -164,7 +164,9 @@ fun HistoryScreen(
                     Text(
                         text = "Search scans by title or text…",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 leadingIcon = {
@@ -198,46 +200,51 @@ fun HistoryScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(0.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Balanced toolbar: count on the left, sort + single view-mode toggle on the right --
+            // matches the icon-badge-in-surfaceVariant-circle language used in Settings/Account.
             Row(
                 modifier = Modifier.fillMaxWidth().widthIn(max = 680.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { newestFirst = !newestFirst }, modifier = Modifier.size(36.dp).testTag("history_sort_order")) {
-                    Icon(Icons.Filled.SwapVert, contentDescription = if (newestFirst) "Newest first; switch to oldest first" else "Oldest first; switch to newest first")
-                }
-                IconButton(onClick = { gridMode = false }, modifier = Modifier.size(36.dp).testTag("history_list_view")) {
-                    Icon(Icons.Filled.ViewList, contentDescription = "List view", tint = if (!gridMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                IconButton(onClick = { gridMode = true }, modifier = Modifier.size(36.dp).testTag("history_grid_view")) {
-                    Icon(Icons.Filled.GridView, contentDescription = "Grid view", tint = if (gridMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-
-            // Count badge
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 680.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "${historyEntries.size} ${if (historyEntries.size == 1) "Item" else "Items"}",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column {
+                    Text(
+                        text = "${historyEntries.size} ${if (historyEntries.size == 1) "Item" else "Items"}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "Saved locally",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
 
-                Text(
-                    text = "Saved locally",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    HistoryToolbarIconButton(
+                        icon = Icons.Filled.SwapVert,
+                        contentDescription = if (newestFirst) "Newest first; switch to oldest first" else "Oldest first; switch to newest first",
+                        testTag = "history_sort_order",
+                        onClick = { newestFirst = !newestFirst }
+                    )
+                    // Single toggle button: shows the icon for the mode it will switch TO,
+                    // and flips gridMode on tap -- replaces the old two-button pair.
+                    HistoryToolbarIconButton(
+                        icon = if (gridMode) Icons.Filled.ViewList else Icons.Filled.GridView,
+                        contentDescription = if (gridMode) "Switch to list view" else "Switch to grid view",
+                        testTag = "history_view_toggle",
+                        onClick = { gridMode = !gridMode }
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Scans List
             if (historyEntries.isEmpty()) {
@@ -323,6 +330,38 @@ fun HistoryScreen(
                 }
             }
         )
+    }
+}
+
+/**
+ * Toolbar icon button styled to match the Settings/Account icon-badge language:
+ * a filled circular surfaceVariant badge around the icon, larger and more stable
+ * than a bare IconButton so it doesn't feel like it's floating loosely in the row.
+ */
+@Composable
+private fun HistoryToolbarIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    testTag: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .testTag(testTag)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }
 
@@ -458,7 +497,9 @@ private fun HistoryScanCard(
                     Text(
                         text = formattedDate,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "•",
@@ -469,7 +510,9 @@ private fun HistoryScanCard(
                         text = "${scan.characterCount} chars",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Medium,
-                        color = PrimaryBlue
+                        color = PrimaryBlue,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
