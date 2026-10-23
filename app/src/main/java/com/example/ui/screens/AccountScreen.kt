@@ -34,6 +34,7 @@ fun AccountScreen(
     onSignOutClick: () -> Unit,
     onDeleteAccountClick: () -> Unit,
     currentPlan: String = "free",
+    photoUrl: String? = null,
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
@@ -57,7 +58,7 @@ fun AccountScreen(
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
             Spacer(Modifier.height(2.dp))
-            ProfileAvatar(name, 84)
+            ProfileAvatar(name, 84, photoUrl)
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(address, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
