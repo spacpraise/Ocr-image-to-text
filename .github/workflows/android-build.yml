@@ -1,8 +1,7 @@
 name: Android build
 
 on:
-  push:
-    branches: [main]
+  # Temporarily manual-only: avoid builds on every main commit while changes are implemented.
   workflow_dispatch:
 
 permissions:
