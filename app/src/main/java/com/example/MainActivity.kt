@@ -431,7 +431,8 @@ fun SnapTextApp(
                             }
                         },
                         onDeleteAccountClick = { openAccountWebsite("/account") },
-                        currentPlan = connectedAccount?.plan ?: "free"
+                        currentPlan = connectedAccount?.plan ?: "free",
+                        photoUrl = connectedAccount?.photoUrl
                     )
                 }
 
