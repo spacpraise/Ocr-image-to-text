@@ -121,7 +121,6 @@ dependencies {
   implementation(libs.coil.compose)
   implementation("com.google.mlkit:text-recognition:16.0.1")
   implementation(libs.converter.moshi)
-  implementation(libs.firebase.ai)
   // Uncomment to use Firestore:
   // implementation(libs.firebase.firestore)
 
