@@ -48,7 +48,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold) },
+                title = { Text("Settings", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background, titleContentColor = MaterialTheme.colorScheme.onBackground)
             )
         },
@@ -57,18 +57,18 @@ fun SettingsScreen(
     ) { insets ->
         Column(
             Modifier.fillMaxSize().padding(insets).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(22.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Surface(
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).clickable(onClick = onAccountClick).testTag("settings_account_card"),
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).clickable(onClick = onAccountClick).testTag("settings_account_card"),
                 shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                    ProfileAvatar(displayName, 58)
-                    Spacer(Modifier.width(16.dp))
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    ProfileAvatar(displayName, 46)
+                    Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(displayName?.takeIf { it.isNotBlank() } ?: "Your account", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                        Text(email?.takeIf { it.isNotBlank() } ?: "Manage your account", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(displayName?.takeIf { it.isNotBlank() } ?: "Your account", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(email?.takeIf { it.isNotBlank() } ?: "Manage your account", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
                     Icon(Icons.Outlined.ChevronRight, contentDescription = "Open account", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
                 }
@@ -135,11 +135,11 @@ private fun SettingsDivider() {
 
 @Composable
 private fun SettingsRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, trailing: String? = null, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 17.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surface, modifier = Modifier.size(46.dp)) {
-            Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(23.dp)) }
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surface, modifier = Modifier.size(38.dp)) {
+            Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp)) }
         }
-        Spacer(Modifier.width(14.dp))
+        Spacer(Modifier.width(10.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
         if (trailing != null) {
             Text(trailing, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)

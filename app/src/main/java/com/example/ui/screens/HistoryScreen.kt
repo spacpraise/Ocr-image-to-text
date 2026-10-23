@@ -126,8 +126,8 @@ fun HistoryScreen(
                 title = {
                     Text(
                         text = "Scan History",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -147,7 +147,7 @@ fun HistoryScreen(
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             // Search Bar
             OutlinedTextField(
@@ -195,7 +195,7 @@ fun HistoryScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Count badge
             Row(
@@ -276,7 +276,7 @@ fun HistoryScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .widthIn(max = 680.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
                 ) {
                     dateGroups.forEach { (dateLabel, entries) ->
@@ -397,14 +397,14 @@ private fun HistoryScanCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Thumbnail
             Surface(
                 modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(10.dp)),
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp)),
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
@@ -428,7 +428,7 @@ private fun HistoryScanCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(9.dp))
 
             // Details
             Column(modifier = Modifier.weight(1f)) {
