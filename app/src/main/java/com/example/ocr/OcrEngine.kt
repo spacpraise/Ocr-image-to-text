@@ -45,7 +45,7 @@ data class OcrResult(
     val languageDetected: String = "Auto-detected",
     val isAiModel: Boolean = false,
     // Positioned words for select-on-image overlay. Empty when no position data is
-    // available (Gemini AI path, or a PDF page with neither extractable native text
+    // available (cloud AI path, or a PDF page with neither extractable native text
     // positions nor OCR-able boxes) -- the UI should fall back to a plain text block.
     val words: List<OcrWord> = emptyList()
 ) {
