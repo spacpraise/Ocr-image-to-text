@@ -48,6 +48,12 @@ object SnapTextNotifications {
         )
     }
 
+    private fun appPendingIntent(context: Context, requestCode: Int): PendingIntent = PendingIntent.getActivity(
+        context, requestCode,
+        Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
     fun notifyUpdateAvailable(context: Context, version: String) {
         ensureChannels(context)
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -97,6 +103,7 @@ object SnapTextNotifications {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("SnapText update downloading")
                 .setContentText("Downloading version $version. You can keep using SnapText.")
+                .setContentIntent(appPendingIntent(context, 4101))
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setProgress(0, 0, true)
@@ -130,6 +137,7 @@ object SnapTextNotifications {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Extracting text")
                 .setContentText("SnapText is processing your image.")
+                .setContentIntent(appPendingIntent(context, 4102))
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setProgress(0, 0, true)
@@ -146,6 +154,7 @@ object SnapTextNotifications {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Text extraction complete")
                 .setContentText(if (wordCount == 1) "Extracted 1 word. Your result is ready in SnapText." else "Extracted $wordCount words. Your result is ready in SnapText.")
+                .setContentIntent(appPendingIntent(context, 4102))
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -161,6 +170,7 @@ object SnapTextNotifications {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Text extraction needs attention")
                 .setContentText("SnapText couldn't finish this scan. Open the app to retry.")
+                .setContentIntent(appPendingIntent(context, 4102))
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
