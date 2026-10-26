@@ -1,0 +1,61 @@
+name: Publish SnapText v1.3.0 release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-v1-3-0.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+
+      - name: Configure Android signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SNAPTEXT_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.SNAPTEXT_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.SNAPTEXT_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "Missing release signing secrets. Cannot safely update existing installations." >&2
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/snaptext-upload.jks"
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/snaptext-upload.jks" >> "$GITHUB_ENV"
+          echo "STORE_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Build signed release APK
+        run: gradle --no-daemon :app:assembleRelease -PappVersionName="1.3.0" -PappVersionCode="1003000"
+
+      - name: Run unit tests
+        run: gradle --no-daemon :app:testDebugUnitTest
+
+      - name: Name APK
+        run: cp app/build/outputs/apk/release/app-release.apk SnapText-1.3.0.apk
+
+      - name: Publish GitHub Release and APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.3.0
+          name: SnapText v1.3.0
+          generate_release_notes: true
+          files: SnapText-1.3.0.apk
