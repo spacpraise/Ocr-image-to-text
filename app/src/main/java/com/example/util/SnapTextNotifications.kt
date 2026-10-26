@@ -124,6 +124,9 @@ object SnapTextNotifications {
         require(apkUrl.startsWith("https://")) { "The update link must use HTTPS." }
         ensureChannels(context)
         val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val previousId = prefs.getLong(KEY_DOWNLOAD_ID, -1L)
+        if (previousId >= 0L) runCatching { manager.remove(previousId) }
         val request = DownloadManager.Request(Uri.parse(apkUrl))
             .setTitle("SnapText $version")
             .setDescription("Downloading app update")
@@ -133,7 +136,7 @@ object SnapTextNotifications {
             .setAllowedOverRoaming(false)
             .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "snaptext-update-$version.apk")
         val id = manager.enqueue(request)
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+        prefs.edit()
             .putLong(KEY_DOWNLOAD_ID, id)
             .putString(KEY_UPDATE_VERSION, version)
             .putString(KEY_INSTALLED_VERSION, BuildConfig.VERSION_NAME)
