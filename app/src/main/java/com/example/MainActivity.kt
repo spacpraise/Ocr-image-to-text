@@ -213,6 +213,7 @@ fun SnapTextApp(
     var availableUpdate by remember { mutableStateOf<AppUpdateInfo?>(null) }
     var updateDownloadProgress by remember { mutableStateOf<Int?>(null) }
     var updateDownloadInProgress by remember { mutableStateOf(false) }
+    var updateDownloaded by remember { mutableStateOf(false) }
 
     val isPremiumAccount = connectedAccount?.plan != null && connectedAccount?.plan != "free"
 
@@ -288,6 +289,8 @@ fun SnapTextApp(
             account
         }.onSuccess { connectedAccount = it }
             .onFailure { connectedAccount = null }
+        updateDownloaded = SnapTextNotifications.hasCompletedDownload(context)
+        updateDownloadInProgress = SnapTextNotifications.isDownloadRunning(context)
         availableUpdate = fetchLatestAppUpdate(context)
         availableUpdate?.let { SnapTextNotifications.notifyUpdateAvailable(context, it.versionName) }
         // Record every app launch for the private usage dashboard (best effort).
@@ -370,6 +373,8 @@ fun SnapTextApp(
                         account
                     }.onSuccess { connectedAccount = it }
                         .onFailure { connectedAccount = null }
+                    updateDownloaded = SnapTextNotifications.hasCompletedDownload(context)
+                    updateDownloadInProgress = SnapTextNotifications.isDownloadRunning(context)
                     if (availableUpdate == null) {
                         availableUpdate = fetchLatestAppUpdate(context)
                     }
@@ -694,23 +699,44 @@ fun SnapTextApp(
         availableUpdate?.let { update ->
             UpdateAvailableSheet(
                 version = update.versionName,
-                downloadProgress = updateDownloadProgress,
+                downloaded = updateDownloaded,
+                downloading = updateDownloadInProgress,
                 onUpdate = {
-                    if (!updateDownloadInProgress) {
+                    if (updateDownloaded) {
+                        runCatching {
+                            val apkUri = SnapTextNotifications.completedDownloadUri(context)
+                            if (apkUri == null) {
+                                updateDownloaded = false
+                                Toast.makeText(context, "The downloaded update is missing or incomplete. Please download it again.", Toast.LENGTH_LONG).show()
+                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
+                                Toast.makeText(context, "Allow SnapText to install updates, then tap Install update again.", Toast.LENGTH_LONG).show()
+                                context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + context.packageName)))
+                            } else {
+                                val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(apkUri, "application/vnd.android.package-archive")
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(installIntent)
+                                availableUpdate = null
+                            }
+                        }.onFailure {
+                            Toast.makeText(context, "Android couldn't open the installer. Check SnapText's permission to install unknown apps and try again.", Toast.LENGTH_LONG).show()
+                        }
+                    } else if (updateDownloadInProgress) {
+                        Toast.makeText(context, "The update is still downloading in the background. Check your notifications for progress.", Toast.LENGTH_LONG).show()
+                    } else {
                         runCatching {
                             SnapTextNotifications.enqueueUpdate(context, update.apkUrl, update.versionName)
-                            updateDownloadInProgress = false
-                            updateDownloadProgress = null
-                            availableUpdate = null
-                            Toast.makeText(context, "Update downloading in the background. Check your notifications for progress.", Toast.LENGTH_LONG).show()
+                            updateDownloadInProgress = true
+                            updateDownloaded = false
+                            Toast.makeText(context, "Update downloading in the background. You can keep using SnapText.", Toast.LENGTH_LONG).show()
                         }.onFailure {
                             updateDownloadInProgress = false
-                            updateDownloadProgress = null
                             Toast.makeText(context, it.message ?: "Could not start the update download. Please try again.", Toast.LENGTH_LONG).show()
                         }
                     }
                 },
-                onDismiss = { if (!updateDownloadInProgress) availableUpdate = null }
+                onDismiss = { availableUpdate = null }
             )
         }
         if (showPremiumSheet) {
