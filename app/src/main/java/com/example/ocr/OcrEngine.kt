@@ -45,7 +45,7 @@ data class OcrResult(
     val languageDetected: String = "Auto-detected",
     val isAiModel: Boolean = false,
     // Positioned words for select-on-image overlay. Empty when no position data is
-    // available (Gemini AI path, or a PDF page with neither extractable native text
+    // available (cloud AI path, or a PDF page with neither extractable native text
     // positions nor OCR-able boxes) -- the UI should fall back to a plain text block.
     val words: List<OcrWord> = emptyList()
 ) {
@@ -59,26 +59,13 @@ object OcrEngine {
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     }
 
-    private const val OCR_EXTRACTION_PROMPT = """
-You are a precision optical character recognition (OCR) and document text extraction engine.
-Analyze the provided image and extract all readable text according to these strict rules:
-1. Read the actual image and transcribe all visible, readable text as accurately as possible.
-2. Support all image types: screenshots, phone camera photos, printed documents, book pages, handwritten notes, receipts, forms, signs, and business cards.
-3. Preserve the original language and scripts (supports single and multilingual documents).
-4. Preserve original layout, paragraph breaks, reasonable reading order, headings, numbers, punctuation, and line breaks.
-5. For multi-column or multi-section documents, read columns in logical natural order.
-6. Do NOT summarize, translate, rewrite, correct spelling, or extrapolate the text.
-7. NEVER invent or hallucinate text that cannot be clearly seen.
-8. If parts of the image are blurry, cut off, or illegible, mark them as '[illegible]' and describe the issue in confidenceNote.
-9. If no readable text exists in the image, set hasText to false and extractedText to empty string.
-"""
 
     /** Default OCR path: runs entirely on-device and works without network access. */
     suspend fun recognizeText(bitmap: Bitmap): OcrResult =
         recognizeWithMlKit(bitmap, "Processed on this device. No internet connection required.")
 
-    /** Cloud Gemini OCR through our server; falls back to on-device ML Kit after 10 seconds. */
-    suspend fun recognizeTextWithAi(bitmap: Bitmap): OcrResult {
+    /** AI-first image OCR through our server; falls back to local extraction when offline or unavailable. */
+    suspend fun recognizeTextWithAi(bitmap: Bitmap, offlineFallback: OcrResult? = null): OcrResult {
         return try {
             withTimeout(10_000L) {
                 val jsonString = withContext(Dispatchers.IO) {
@@ -93,6 +80,7 @@ Analyze the provided image and extract all readable text according to these stri
                             true
                         )
                     } else bitmap
+
                     val output = java.io.ByteArrayOutputStream()
                     requestBitmap.compress(Bitmap.CompressFormat.JPEG, 82, output)
                     if (requestBitmap !== bitmap) requestBitmap.recycle()
@@ -101,7 +89,7 @@ Analyze the provided image and extract all readable text according to these stri
                     try {
                         connection.requestMethod = "POST"
                         connection.connectTimeout = 2_000
-                        connection.readTimeout = 7_500
+                        connection.readTimeout = 9_000
                         connection.doOutput = true
                         connection.setRequestProperty("Content-Type", "application/json")
                         connection.setRequestProperty("Accept", "application/json")
@@ -112,35 +100,34 @@ Analyze the provided image and extract all readable text according to these stri
                         val status = connection.responseCode
                         val stream = if (status in 200..299) connection.inputStream else connection.errorStream
                         val body = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-                        if (status !in 200..299) throw IllegalStateException("Cloud OCR failed ($status)")
+                        if (status !in 200..299) throw IllegalStateException("Cloud AI OCR failed ($status)")
                         body
                     } finally {
                         connection.disconnect()
                     }
                 }
+
                 val json = JSONObject(jsonString)
                 val finalText = json.optString("extractedText", "").trim()
-                val lines = if (finalText.isEmpty()) 0 else finalText.lines().size
-                val words = if (finalText.isEmpty()) 0 else finalText.split(Regex("\\s+")).count { it.isNotBlank() }
+                if (finalText.isBlank()) throw IllegalStateException("AI returned empty text")
                 OcrResult(
                     fullText = finalText,
                     characterCount = finalText.length,
-                    wordCount = words,
-                    lineCount = lines,
-                    confidenceNote = json.optString("confidenceNote", "Extracted with Google Gemini."),
+                    wordCount = finalText.split(Regex("\\s+")).count { it.isNotBlank() },
+                    lineCount = finalText.lines().size,
+                    confidenceNote = json.optString("confidenceNote", "Extracted directly from the image using AI."),
                     languageDetected = json.optString("languageDetected", "Auto-detected"),
                     isAiModel = true,
                     words = emptyList()
                 )
             }
         } catch (e: CancellationException) {
-            // A timeout is a fallback condition; explicit parent cancellation should still propagate.
             if (e !is kotlinx.coroutines.TimeoutCancellationException) throw e
-            Log.w(TAG, "Cloud OCR exceeded 10 seconds; using local ML Kit OCR.")
-            recognizeWithMlKit(bitmap, "Extracted via on-device OCR engine")
+            Log.w(TAG, "Cloud AI OCR timed out; falling back to local extraction.")
+            offlineFallback ?: recognizeWithMlKit(bitmap, "Extracted via on-device OCR engine")
         } catch (e: Exception) {
-            Log.w(TAG, "Cloud OCR unavailable; using local ML Kit OCR: ${e.message}")
-            recognizeWithMlKit(bitmap, "Extracted via on-device OCR engine")
+            Log.w(TAG, "Cloud AI OCR unavailable; falling back to local extraction: ${e.message}")
+            offlineFallback ?: recognizeWithMlKit(bitmap, "Extracted via on-device OCR engine")
         }
     }
 

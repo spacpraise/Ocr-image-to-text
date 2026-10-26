@@ -401,8 +401,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val pdfIndex = page.pdfPageIndex
                 val pdfFile = stagedPdfFile
 
+                // AI-first scan: use the image as the source of truth. For PDFs, retain
+                // locally extractable PDF text as the offline fallback; for images, fall back
+                // to on-device ML Kit OCR when the network or AI service is unavailable.
                 val (resultBitmap, result) = if (pdfIndex != null && pdfFile != null) {
-                    scanPdfPage(pdfFile, pdfIndex)
+                    val (pdfBitmap, localPdfResult) = scanPdfPage(pdfFile, pdfIndex)
+                    if (pdfBitmap != null) {
+                        pdfBitmap to OcrEngine.recognizeTextWithAi(pdfBitmap, localPdfResult)
+                    } else {
+                        null to localPdfResult
+                    }
                 } else {
                     val bmp = page.bitmap ?: throw IllegalStateException("No image for this page")
                     bmp to OcrEngine.recognizeTextWithAi(bmp)
