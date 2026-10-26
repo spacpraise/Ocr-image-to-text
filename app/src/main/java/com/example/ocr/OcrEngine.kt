@@ -59,19 +59,6 @@ object OcrEngine {
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     }
 
-    private const val OCR_EXTRACTION_PROMPT = """
-You are a precision optical character recognition (OCR) and document text extraction engine.
-Analyze the provided image and extract all readable text according to these strict rules:
-1. Read the actual image and transcribe all visible, readable text as accurately as possible.
-2. Support all image types: screenshots, phone camera photos, printed documents, book pages, handwritten notes, receipts, forms, signs, and business cards.
-3. Preserve the original language and scripts (supports single and multilingual documents).
-4. Preserve original layout, paragraph breaks, reasonable reading order, headings, numbers, punctuation, and line breaks.
-5. For multi-column or multi-section documents, read columns in logical natural order.
-6. Do NOT summarize, translate, rewrite, correct spelling, or extrapolate the text.
-7. NEVER invent or hallucinate text that cannot be clearly seen.
-8. If parts of the image are blurry, cut off, or illegible, mark them as '[illegible]' and describe the issue in confidenceNote.
-9. If no readable text exists in the image, set hasText to false and extractedText to empty string.
-"""
 
     /** Default OCR path: runs entirely on-device and works without network access. */
     suspend fun recognizeText(bitmap: Bitmap): OcrResult =
