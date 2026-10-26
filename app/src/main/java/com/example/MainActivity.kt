@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
+import android.provider.Settings
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.lifecycle.Lifecycle
@@ -60,11 +62,11 @@ import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.UpdateAvailableSheet
 import com.example.ui.screens.SubscriptionPlan
 import com.example.ui.theme.SnapTextTheme
+import com.example.util.SnapTextNotifications
 import com.example.util.configureAppCheck
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
-import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -125,6 +127,8 @@ class MainActivity : ComponentActivity() {
         private set
     var incomingUpdateRequest by mutableStateOf(false)
         private set
+    var incomingInstallRequest by mutableStateOf(false)
+        private set
 
     private fun readAuthCode(intent: Intent?) {
         val uri = intent?.data
@@ -136,6 +140,7 @@ class MainActivity : ComponentActivity() {
     private fun readUpdateRequest(intent: Intent?) {
         val uri = intent?.data
         incomingUpdateRequest = uri?.scheme == "snaptext" && uri.host == "update"
+        incomingInstallRequest = uri?.scheme == "snaptext" && uri.host == "update-install"
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -171,7 +176,9 @@ class MainActivity : ComponentActivity() {
                     incomingAuthCode = incomingAuthCode,
                     onAuthCodeHandled = { incomingAuthCode = null },
                     incomingUpdateRequest = incomingUpdateRequest,
-                    onUpdateRequestHandled = { incomingUpdateRequest = false }
+                    onUpdateRequestHandled = { incomingUpdateRequest = false },
+                    incomingInstallRequest = incomingInstallRequest,
+                    onInstallRequestHandled = { incomingInstallRequest = false }
                 )
             }
         }
@@ -188,6 +195,8 @@ fun SnapTextApp(
     onAuthCodeHandled: () -> Unit = {},
     incomingUpdateRequest: Boolean = false,
     onUpdateRequestHandled: () -> Unit = {},
+    incomingInstallRequest: Boolean = false,
+    onInstallRequestHandled: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -195,6 +204,9 @@ fun SnapTextApp(
     val prefs = remember(context) { PreferencesManager(context) }
     val lifecycleOwner = LocalLifecycleOwner.current
     val accountScope = rememberCoroutineScope()
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { }
     var connectedAccount by remember { mutableStateOf<SnapTextAccount?>(null) }
     var accountBusy by remember { mutableStateOf(false) }
     var deletingAccount by remember { mutableStateOf(false) }
@@ -257,6 +269,12 @@ fun SnapTextApp(
     }
 
     LaunchedEffect(Unit) {
+        SnapTextNotifications.ensureChannels(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
         runCatching {
             val account = withContext(Dispatchers.IO) { sessionManager.refreshAccount() }
             if (account != null) {
@@ -270,6 +288,7 @@ fun SnapTextApp(
         }.onSuccess { connectedAccount = it }
             .onFailure { connectedAccount = null }
         availableUpdate = fetchLatestAppUpdate(context)
+        availableUpdate?.let { SnapTextNotifications.notifyUpdateAvailable(context, it.versionName) }
         // Record every app launch for the private usage dashboard (best effort).
         withContext(Dispatchers.IO) {
             sessionManager.reportUsageEvent("app_open", BuildConfig.VERSION_NAME)
@@ -285,10 +304,34 @@ fun SnapTextApp(
         val update = fetchLatestAppUpdate(context)
         if (update != null) {
             availableUpdate = update
+            SnapTextNotifications.notifyUpdateAvailable(context, update.versionName)
         } else {
             Toast.makeText(context, "SnapText is already up to date, or the latest APK is not available yet.", Toast.LENGTH_LONG).show()
         }
         onUpdateRequestHandled()
+    }
+
+    LaunchedEffect(incomingInstallRequest) {
+        if (!incomingInstallRequest) return@LaunchedEffect
+        try {
+            val apkUri = SnapTextNotifications.completedDownloadUri(context)
+            if (apkUri == null) {
+                Toast.makeText(context, "The downloaded update could not be found. Please download it again.", Toast.LENGTH_LONG).show()
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
+                Toast.makeText(context, "Allow SnapText to install updates, then tap the update notification again.", Toast.LENGTH_LONG).show()
+                context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:\${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } else {
+                val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(apkUri, "application/vnd.android.package-archive")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(installIntent)
+            }
+        } catch (_: Exception) {
+            Toast.makeText(context, "Could not open the installer. Open SnapText and retry the update.", Toast.LENGTH_LONG).show()
+        } finally {
+            onInstallRequestHandled()
+        }
     }
 
     LaunchedEffect(incomingAuthCode) {
@@ -653,51 +696,16 @@ fun SnapTextApp(
                 downloadProgress = updateDownloadProgress,
                 onUpdate = {
                     if (!updateDownloadInProgress) {
-                        accountScope.launch {
+                        runCatching {
+                            SnapTextNotifications.enqueueUpdate(context, update.apkUrl, update.versionName)
                             updateDownloadInProgress = true
                             updateDownloadProgress = 0
-                            try {
-                                val apkFile = withContext(Dispatchers.IO) {
-                                    val connection = (URL(update.apkUrl).openConnection() as HttpURLConnection)
-                                    val target = File(context.cacheDir, "snaptext-update.apk")
-                                    try {
-                                        connection.connectTimeout = 15000
-                                        connection.readTimeout = 30000
-                                        connection.instanceFollowRedirects = true
-                                        connection.connect()
-                                        if (connection.responseCode !in 200..299) error("Download failed (${connection.responseCode})")
-                                        val total = connection.contentLengthLong
-                                        connection.inputStream.use { input ->
-                                            FileOutputStream(target).use { output ->
-                                                val buffer = ByteArray(16 * 1024)
-                                                var downloaded = 0L
-                                                while (true) {
-                                                    val count = input.read(buffer)
-                                                    if (count < 0) break
-                                                    output.write(buffer, 0, count)
-                                                    downloaded += count
-                                                    if (total > 0) {
-                                                        val percent = ((downloaded * 100) / total).toInt().coerceIn(0, 99)
-                                                        withContext(Dispatchers.Main) { updateDownloadProgress = percent }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        target
-                                    } finally { connection.disconnect() }
-                                }
-                                updateDownloadProgress = 100
-                                val apkUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", apkFile)
-                                val installIntent = Intent(Intent.ACTION_VIEW).apply {
-                                    setDataAndType(apkUri, "application/vnd.android.package-archive")
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
-                                context.startActivity(installIntent)
-                                availableUpdate = null
-                            } catch (_: Exception) {
-                                Toast.makeText(context, "Couldn\u0027t download the update. Please try again.", Toast.LENGTH_LONG).show()
-                                updateDownloadProgress = null
-                            } finally { updateDownloadInProgress = false }
+                            availableUpdate = null
+                            Toast.makeText(context, "Update downloading in the background. Check your notifications for progress.", Toast.LENGTH_LONG).show()
+                        }.onFailure {
+                            updateDownloadInProgress = false
+                            updateDownloadProgress = null
+                            Toast.makeText(context, it.message ?: "Could not start the update download. Please try again.", Toast.LENGTH_LONG).show()
                         }
                     }
                 },
