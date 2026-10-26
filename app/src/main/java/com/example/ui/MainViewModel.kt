@@ -401,11 +401,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val pdfIndex = page.pdfPageIndex
                 val pdfFile = stagedPdfFile
 
-                val (resultBitmap, result) = if (pdfIndex != null && pdfFile != null) {
+                val (resultBitmap, rawResult) = if (pdfIndex != null && pdfFile != null) {
                     scanPdfPage(pdfFile, pdfIndex)
                 } else {
                     val bmp = page.bitmap ?: throw IllegalStateException("No image for this page")
                     bmp to OcrEngine.recognizeTextWithAi(bmp)
+                }
+
+                // Second pass: compare the original image with raw OCR and reconstruct
+                // headings, paragraphs, lists, and tables before showing/saving the result.
+                // If AI polishing is unavailable, OcrEngine returns the raw result unchanged.
+                val result = if (resultBitmap != null && rawResult.fullText.isNotBlank()) {
+                    OcrEngine.polishExtractedTextWithAi(resultBitmap, rawResult)
+                } else {
+                    rawResult
                 }
 
                 // Persist to history as its own ScanEntity.
