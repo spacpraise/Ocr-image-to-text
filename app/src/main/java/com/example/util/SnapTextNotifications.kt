@@ -7,7 +7,6 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -60,7 +59,7 @@ object SnapTextNotifications {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_UPDATES)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("SnapText update available")
             .setContentText("Version $version is ready. Tap to review the update.")
             .setStyle(NotificationCompat.BigTextStyle().bigText("SnapText $version is available. Open the app to review and download the update."))
@@ -91,7 +90,7 @@ object SnapTextNotifications {
         NotificationManagerCompat.from(context).notify(
             NOTIFICATION_UPDATE,
             NotificationCompat.Builder(context, CHANNEL_UPDATES)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("SnapText update downloading")
                 .setContentText("Downloading version $version. You can keep using SnapText.")
                 .setOngoing(true)
@@ -124,7 +123,7 @@ object SnapTextNotifications {
         NotificationManagerCompat.from(context).notify(
             NOTIFICATION_SCAN,
             NotificationCompat.Builder(context, CHANNEL_SCANNING)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Extracting text")
                 .setContentText("SnapText is processing your image.")
                 .setOngoing(true)
@@ -140,7 +139,7 @@ object SnapTextNotifications {
         NotificationManagerCompat.from(context).notify(
             NOTIFICATION_SCAN,
             NotificationCompat.Builder(context, CHANNEL_SCANNING)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Text extraction complete")
                 .setContentText(if (wordCount == 1) "Extracted 1 word. Your result is ready in SnapText." else "Extracted $wordCount words. Your result is ready in SnapText.")
                 .setAutoCancel(true)
@@ -155,7 +154,7 @@ object SnapTextNotifications {
         NotificationManagerCompat.from(context).notify(
             NOTIFICATION_SCAN,
             NotificationCompat.Builder(context, CHANNEL_SCANNING)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Text extraction needs attention")
                 .setContentText("SnapText couldn't finish this scan. Open the app to retry.")
                 .setAutoCancel(true)
@@ -184,7 +183,7 @@ object SnapTextNotifications {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_UPDATES)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(if (success) "Update ready to install" else "Update download failed")
             .setContentText(if (success) "SnapText $version has downloaded. Tap to continue installation." else "SnapText couldn't download the update. Open the app to try again.")
             .setContentIntent(pending)
