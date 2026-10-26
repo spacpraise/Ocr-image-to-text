@@ -18,6 +18,7 @@ import com.example.ocr.ImageUtils
 import com.example.ocr.OcrEngine
 import com.example.ocr.OcrResult
 import com.example.ocr.SampleDocumentType
+import com.example.util.SnapTextNotifications
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import kotlinx.coroutines.Dispatchers
@@ -395,6 +396,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         updatePage(index) { it.copy(state = PageScanState.SCANNING) }
+        SnapTextNotifications.showScanStarted(context.applicationContext)
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -476,9 +478,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     }
                     updateStorageInfo()
+                    SnapTextNotifications.showScanCompleted(context.applicationContext, result.wordCount)
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
+                    SnapTextNotifications.showScanFailed(context.applicationContext)
                     updatePage(index) {
                         it.copy(
                             state = PageScanState.FAILED,
