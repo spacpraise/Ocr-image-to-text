@@ -270,8 +270,11 @@ fun SnapTextApp(
         }.onSuccess { connectedAccount = it }
             .onFailure { connectedAccount = null }
         availableUpdate = fetchLatestAppUpdate(context)
-        // Anonymous, one-time-per-install download/open ping -- fires even for users
-        // who never sign up, so it reflects true install count, not just sign-ups.
+        // Record every app launch for the private usage dashboard (best effort).
+        withContext(Dispatchers.IO) {
+            sessionManager.reportUsageEvent("app_open", BuildConfig.VERSION_NAME)
+        }
+        // Anonymous, one-time-per-install install ping, independent of sign-in.
         if (prefs.markInstallPingSentIfNeeded()) {
             withContext(Dispatchers.IO) { sessionManager.pingInstallEvent() }
         }
