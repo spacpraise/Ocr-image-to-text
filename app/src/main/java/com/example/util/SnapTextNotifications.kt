@@ -13,6 +13,7 @@ import android.os.Environment
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.MainActivity
+import com.example.BuildConfig
 import com.example.R
 
 /**
@@ -28,9 +29,11 @@ object SnapTextNotifications {
     private const val KEY_UPDATE_VERSION = "active_update_version"
     private const val KEY_NOTIFIED_VERSION = "last_notified_update_version"
     private const val KEY_NOTIFIED_AT = "last_notified_update_at"
+    private const val KEY_INSTALLED_VERSION = "last_observed_installed_version"
     private const val NOTIFICATION_UPDATE = 4101
     private const val NOTIFICATION_SCAN = 4102
     private const val NOTIFICATION_UPDATE_AVAILABLE = 4103
+    private const val NOTIFICATION_UPDATE_INSTALLED = 4105
 
     fun ensureChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -53,6 +56,25 @@ object SnapTextNotifications {
         Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
+
+    fun notifyInstalledVersionIfChanged(context: Context) {
+        ensureChannels(context)
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val currentVersion = BuildConfig.VERSION_NAME
+        val previousVersion = prefs.getString(KEY_INSTALLED_VERSION, null)
+        if (previousVersion != null && previousVersion != currentVersion) {
+            val notification = NotificationCompat.Builder(context, CHANNEL_UPDATES)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("SnapText updated successfully")
+                .setContentText("You're now using SnapText $currentVersion.")
+                .setContentIntent(appPendingIntent(context, NOTIFICATION_UPDATE_INSTALLED))
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .build()
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_UPDATE_INSTALLED, notification)
+        }
+        prefs.edit().putString(KEY_INSTALLED_VERSION, currentVersion).apply()
+    }
 
     fun notifyUpdateAvailable(context: Context, version: String) {
         ensureChannels(context)
@@ -205,6 +227,14 @@ object SnapTextNotifications {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
         NotificationManagerCompat.from(context).notify(NOTIFICATION_UPDATE, notification)
+    }
+}
+
+class SnapTextPackageReplacedReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+            SnapTextNotifications.notifyInstalledVersionIfChanged(context)
+        }
     }
 }
 
