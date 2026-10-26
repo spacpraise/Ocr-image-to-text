@@ -118,6 +118,7 @@ object SnapTextNotifications {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putLong(KEY_DOWNLOAD_ID, id)
             .putString(KEY_UPDATE_VERSION, version)
+            .putString(KEY_INSTALLED_VERSION, BuildConfig.VERSION_NAME)
             .apply()
         NotificationManagerCompat.from(context).notify(
             NOTIFICATION_UPDATE,
