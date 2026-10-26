@@ -57,12 +57,12 @@ object SnapTextNotifications {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    fun notifyInstalledVersionIfChanged(context: Context) {
+    fun notifyInstalledVersionIfChanged(context: Context, packageReplaced: Boolean = false) {
         ensureChannels(context)
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val currentVersion = BuildConfig.VERSION_NAME
         val previousVersion = prefs.getString(KEY_INSTALLED_VERSION, null)
-        if (previousVersion != null && previousVersion != currentVersion) {
+        if (packageReplaced || (previousVersion != null && previousVersion != currentVersion)) {
             val notification = NotificationCompat.Builder(context, CHANNEL_UPDATES)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("SnapText updated successfully")
@@ -234,7 +234,7 @@ object SnapTextNotifications {
 class SnapTextPackageReplacedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
-            SnapTextNotifications.notifyInstalledVersionIfChanged(context)
+            SnapTextNotifications.notifyInstalledVersionIfChanged(context, packageReplaced = true)
         }
     }
 }
