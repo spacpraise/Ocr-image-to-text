@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 fun UpdateAvailableSheet(
     version: String,
     downloadProgress: Int? = null,
+    downloaded: Boolean = false,
+    downloading: Boolean = false,
     onUpdate: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -78,16 +80,16 @@ fun UpdateAvailableSheet(
             }
             Button(
                 onClick = onUpdate,
-                enabled = downloadProgress == null,
+                enabled = !downloading,
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Icon(Icons.Filled.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(8.dp))
-                Text("Install update", fontWeight = FontWeight.SemiBold)
+                Text(if (downloaded) "Install update" else if (downloading) "Downloading…" else "Download update", fontWeight = FontWeight.SemiBold)
             }
-            if (downloadProgress == null) {
+            if (!downloading) {
                 TextButton(onClick = onDismiss) { Text("Not now") }
             }
         }
