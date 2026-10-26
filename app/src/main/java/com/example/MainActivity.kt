@@ -319,7 +319,7 @@ fun SnapTextApp(
                 Toast.makeText(context, "The downloaded update could not be found. Please download it again.", Toast.LENGTH_LONG).show()
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
                 Toast.makeText(context, "Allow SnapText to install updates, then tap the update notification again.", Toast.LENGTH_LONG).show()
-                context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:\${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             } else {
                 val installIntent = Intent(Intent.ACTION_VIEW).apply {
                     setDataAndType(apkUri, "application/vnd.android.package-archive")
@@ -698,8 +698,8 @@ fun SnapTextApp(
                     if (!updateDownloadInProgress) {
                         runCatching {
                             SnapTextNotifications.enqueueUpdate(context, update.apkUrl, update.versionName)
-                            updateDownloadInProgress = true
-                            updateDownloadProgress = 0
+                            updateDownloadInProgress = false
+                            updateDownloadProgress = null
                             availableUpdate = null
                             Toast.makeText(context, "Update downloading in the background. Check your notifications for progress.", Toast.LENGTH_LONG).show()
                         }.onFailure {
