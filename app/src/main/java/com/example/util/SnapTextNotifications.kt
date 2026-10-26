@@ -102,6 +102,24 @@ object SnapTextNotifications {
         NotificationManagerCompat.from(context).notify(NOTIFICATION_UPDATE_AVAILABLE, notification)
     }
 
+    fun hasCompletedDownload(context: Context): Boolean {
+        val id = activeDownloadId(context)
+        if (id < 0L) return false
+        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        return manager.query(DownloadManager.Query().setFilterById(id)).use { cursor ->
+            cursor.moveToFirst() && cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) == DownloadManager.STATUS_SUCCESSFUL && manager.getUriForDownloadedFile(id) != null
+        }
+    }
+
+    fun isDownloadRunning(context: Context): Boolean {
+        val id = activeDownloadId(context)
+        if (id < 0L) return false
+        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        return manager.query(DownloadManager.Query().setFilterById(id)).use { cursor ->
+            if (!cursor.moveToFirst()) false else cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) in listOf(DownloadManager.STATUS_PENDING, DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PAUSED)
+        }
+    }
+
     fun enqueueUpdate(context: Context, apkUrl: String, version: String): Long {
         require(apkUrl.startsWith("https://")) { "The update link must use HTTPS." }
         ensureChannels(context)
