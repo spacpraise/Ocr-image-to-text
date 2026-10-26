@@ -144,6 +144,85 @@ Analyze the provided image and extract all readable text according to these stri
         }
     }
 
+    /**
+     * Compares the source image with the first-pass OCR text and reconstructs its layout.
+     * If the network/AI service is unavailable, the original OCR result is returned unchanged.
+     */
+    suspend fun polishExtractedTextWithAi(bitmap: Bitmap, original: OcrResult): OcrResult {
+        if (original.fullText.isBlank()) return original
+
+        return try {
+            withTimeout(14_000L) {
+                val jsonString = withContext(Dispatchers.IO) {
+                    val maxDimension = 1600
+                    val largest = maxOf(bitmap.width, bitmap.height)
+                    val requestBitmap = if (largest > maxDimension) {
+                        val scale = maxDimension.toFloat() / largest
+                        Bitmap.createScaledBitmap(
+                            bitmap,
+                            (bitmap.width * scale).toInt().coerceAtLeast(1),
+                            (bitmap.height * scale).toInt().coerceAtLeast(1),
+                            true
+                        )
+                    } else bitmap
+
+                    val output = java.io.ByteArrayOutputStream()
+                    requestBitmap.compress(Bitmap.CompressFormat.JPEG, 82, output)
+                    if (requestBitmap !== bitmap) requestBitmap.recycle()
+                    val encoded = Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP)
+                    val connection = (URL("https://snaptext-pearl.vercel.app/api/polish-text").openConnection() as HttpURLConnection)
+                    try {
+                        connection.requestMethod = "POST"
+                        connection.connectTimeout = 2_000
+                        connection.readTimeout = 12_000
+                        connection.doOutput = true
+                        connection.setRequestProperty("Content-Type", "application/json")
+                        connection.setRequestProperty("Accept", "application/json")
+                        val request = JSONObject()
+                            .put("imageBase64", encoded)
+                            .put("mimeType", "image/jpeg")
+                            .put("extractedText", original.fullText)
+                        OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { it.write(request.toString()) }
+                        val status = connection.responseCode
+                        val stream = if (status in 200..299) connection.inputStream else connection.errorStream
+                        val body = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                        if (status !in 200..299) throw IllegalStateException("AI text polishing failed ($status)")
+                        body
+                    } finally {
+                        connection.disconnect()
+                    }
+                }
+
+                val json = JSONObject(jsonString)
+                val polishedText = json.optString("polishedText", "").trim()
+                if (polishedText.isBlank()) return@withTimeout original
+
+                OcrResult(
+                    fullText = polishedText,
+                    characterCount = polishedText.length,
+                    wordCount = polishedText.split(Regex("\\s+")).count { it.isNotBlank() },
+                    lineCount = polishedText.lines().size,
+                    confidenceNote = json.optString(
+                        "confidenceNote",
+                        "AI compared the extracted text with the source image."
+                    ),
+                    languageDetected = json.optString("languageDetected", original.languageDetected),
+                    isAiModel = true,
+                    // Polished layout may differ from the first-pass OCR boxes, so don't
+                    // attach stale word coordinates to the reconstructed text.
+                    words = emptyList()
+                )
+            }
+        } catch (e: CancellationException) {
+            if (e !is kotlinx.coroutines.TimeoutCancellationException) throw e
+            Log.w(TAG, "AI text polishing timed out; keeping original OCR text.")
+            original
+        } catch (e: Exception) {
+            Log.w(TAG, "AI text polishing unavailable; keeping original OCR text: ${e.message}")
+            original
+        }
+    }
+
     private suspend fun recognizeWithMlKit(bitmap: Bitmap, fallbackNote: String): OcrResult {
         return suspendCancellableCoroutine { continuation ->
             val inputImage = InputImage.fromBitmap(bitmap, 0)
