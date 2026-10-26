@@ -27,6 +27,7 @@ object SnapTextNotifications {
     private const val KEY_DOWNLOAD_ID = "active_update_download_id"
     private const val KEY_UPDATE_VERSION = "active_update_version"
     private const val KEY_NOTIFIED_VERSION = "last_notified_update_version"
+    private const val KEY_NOTIFIED_AT = "last_notified_update_at"
     private const val NOTIFICATION_UPDATE = 4101
     private const val NOTIFICATION_SCAN = 4102
     private const val NOTIFICATION_UPDATE_AVAILABLE = 4103
@@ -50,8 +51,11 @@ object SnapTextNotifications {
     fun notifyUpdateAvailable(context: Context, version: String) {
         ensureChannels(context)
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        if (prefs.getString(KEY_NOTIFIED_VERSION, null) == version) return
-        prefs.edit().putString(KEY_NOTIFIED_VERSION, version).apply()
+        val lastVersion = prefs.getString(KEY_NOTIFIED_VERSION, null)
+        val lastNotifiedAt = prefs.getLong(KEY_NOTIFIED_AT, 0L)
+        val oneDayMillis = 24L * 60L * 60L * 1000L
+        if (lastVersion == version && System.currentTimeMillis() - lastNotifiedAt < oneDayMillis) return
+        prefs.edit().putString(KEY_NOTIFIED_VERSION, version).putLong(KEY_NOTIFIED_AT, System.currentTimeMillis()).apply()
         val openApp = PendingIntent.getActivity(
             context, 4103,
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
