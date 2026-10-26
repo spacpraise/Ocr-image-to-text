@@ -8,6 +8,8 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.AppDatabase
+import com.example.data.AccountSessionManager
+import com.example.BuildConfig
 import com.example.data.AppThemeMode
 import com.example.data.PreferencesManager
 import com.example.data.ScanEntity
@@ -460,6 +462,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     Log.e("MainViewModel", "Database save error: ${e.message}")
                     null
                 }
+
+                // Record successful OCR after the result has been produced. Network failures are ignored.
+                runCatching { AccountSessionManager(context).reportUsageEvent("scan_success", BuildConfig.VERSION_NAME) }
 
                 withContext(Dispatchers.Main) {
                     updatePage(index) {
