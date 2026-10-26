@@ -13,6 +13,7 @@ import org.json.JSONObject
 import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.UUID
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -171,6 +172,25 @@ class AccountSessionManager(context: Context) {
      * at the call site, so this itself has no dedupe logic). Best-effort: failures are
      * swallowed since this must never block app startup or show an error to the user.
      */
+    /** Best-effort product telemetry; never blocks OCR or surfaces network failures. */
+    fun reportUsageEvent(eventType: String, appVersion: String) {
+        if (eventType != "app_open" && eventType != "scan_success") return
+        runCatching {
+            val deviceId = prefs.getString("telemetry_device_id", null) ?: UUID.randomUUID().toString().also {
+                prefs.edit().putString("telemetry_device_id", it).apply()
+            }
+            val body = JSONObject()
+                .put("eventType", eventType)
+                .put("deviceId", deviceId)
+                .put("appVersion", appVersion)
+                .toString()
+                .toRequestBody(jsonType)
+            val builder = Request.Builder().url("$WEBSITE_URL/api/app-usage-event").post(body)
+            savedToken()?.let { builder.header("Authorization", "Bearer $it") }
+            client.newCall(builder.build()).execute().use { /* best effort */ }
+        }
+    }
+
     fun pingInstallEvent() {
         runCatching {
             val request = Request.Builder().url("$WEBSITE_URL/api/app-install-ping").post(
