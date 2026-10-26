@@ -270,6 +270,7 @@ fun SnapTextApp(
 
     LaunchedEffect(Unit) {
         SnapTextNotifications.ensureChannels(context)
+        SnapTextNotifications.notifyInstalledVersionIfChanged(context)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
