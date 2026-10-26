@@ -102,7 +102,7 @@ Analyze the provided image and extract all readable text according to these stri
                     try {
                         connection.requestMethod = "POST"
                         connection.connectTimeout = 2_000
-                        connection.readTimeout = 7_500
+                        connection.readTimeout = 9_000
                         connection.doOutput = true
                         connection.setRequestProperty("Content-Type", "application/json")
                         connection.setRequestProperty("Accept", "application/json")
