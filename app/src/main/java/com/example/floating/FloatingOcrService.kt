@@ -140,14 +140,15 @@ class FloatingOcrService : Service() {
                 image.close()
             }
         }, captureHandler)
+        // Android 14+ requires the callback to be registered before createVirtualDisplay().
+        projection!!.registerCallback(object : MediaProjection.Callback() {
+            override fun onStop() { stopSelf() }
+        }, captureHandler)
         virtualDisplay = projection!!.createVirtualDisplay(
             "SnapTextFloatingOCR", screenWidth, screenHeight, density,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
             imageReader!!.surface, null, captureHandler
         )
-        projection!!.registerCallback(object : MediaProjection.Callback() {
-            override fun onStop() { stopSelf() }
-        }, captureHandler)
     }
 
     private fun imageToBitmap(image: Image): Bitmap? {
