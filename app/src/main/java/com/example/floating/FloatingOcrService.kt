@@ -185,6 +185,10 @@ class FloatingOcrService : Service() {
             try {
                 val result = OcrEngine.recognizeText(bitmap)
                 selectionView?.setWords(result.words, bitmap.width, bitmap.height)
+                selectionView?.visibility = View.VISIBLE
+                if (scrollMode) Handler(mainLooper).postDelayed({
+                    if (scrollMode) selectionView?.visibility = View.INVISIBLE
+                }, 700L)
             } catch (_: Exception) {
                 Toast.makeText(this@FloatingOcrService, "Couldn't recognize this screen. Try again.", Toast.LENGTH_SHORT).show()
             } finally {
@@ -199,7 +203,7 @@ class FloatingOcrService : Service() {
             if (!expanded) {
                 expanded = true
                 bubble?.let { windowManager.removeView(it) }
-                val camera = BubbleHandle(this) { createSelectionOverlay(); captureRequested.set(true) }.apply { setExpandedCamera() }
+                val camera = BubbleHandle(this) { createSelectionOverlay(); selectionView?.visibility = View.INVISIBLE; captureRequested.set(true) }.apply { setExpandedCamera() }
                 bubble = camera
                 windowManager.addView(camera, bubbleParams(64, 64))
             } else {
@@ -245,7 +249,7 @@ class FloatingOcrService : Service() {
             type, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
-        windowManager.addView(selectionView, params)
+        selectionView?.visibility = View.INVISIBLE\n        windowManager.addView(selectionView, params)
     }
 
     private fun removeSelectionOverlay() {
