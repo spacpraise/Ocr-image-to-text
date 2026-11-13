@@ -249,7 +249,8 @@ class FloatingOcrService : Service() {
             type, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
-        selectionView?.visibility = View.INVISIBLE\n        windowManager.addView(selectionView, params)
+        selectionView?.visibility = View.INVISIBLE
+        windowManager.addView(selectionView, params)
     }
 
     private fun removeSelectionOverlay() {
