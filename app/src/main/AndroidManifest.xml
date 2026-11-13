@@ -74,6 +74,12 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".floating.FloatingOcrService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
         <receiver
             android:name=".util.SnapTextPackageReplacedReceiver"
             android:enabled="true"
