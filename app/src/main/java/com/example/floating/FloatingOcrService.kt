@@ -199,7 +199,7 @@ class FloatingOcrService : Service() {
             if (!expanded) {
                 expanded = true
                 bubble?.let { windowManager.removeView(it) }
-                val camera = BubbleHandle(this) { captureRequested.set(true) }.apply { setExpandedCamera() }
+                val camera = BubbleHandle(this) { createSelectionOverlay(); captureRequested.set(true) }.apply { setExpandedCamera() }
                 bubble = camera
                 windowManager.addView(camera, bubbleParams(64, 64))
             } else {
@@ -349,7 +349,13 @@ private class SelectionOverlay(
         selected.clear()
         invalidate()
     }
-    fun setTouchThrough(enabled: Boolean) { touchThrough = enabled }
+    fun setTouchThrough(enabled: Boolean) {
+        touchThrough = enabled
+        val params = layoutParams as? WindowManager.LayoutParams ?: return
+        params.flags = if (enabled) params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        else params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+        (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).updateViewLayout(this, params)
+    }
     fun setScrollMode(enabled: Boolean) { scrollMode = enabled; invalidate() }
 
     override fun onDraw(canvas: Canvas) {
