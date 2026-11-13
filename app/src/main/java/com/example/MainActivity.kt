@@ -11,6 +11,8 @@ import androidx.browser.customtabs.CustomTabsIntent
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.media.projection.MediaProjectionManager
+import com.example.floating.FloatingOcrService
 import com.example.data.AccountSessionManager
 import com.example.data.PreferencesManager
 import com.example.data.SnapTextAccount
@@ -207,6 +209,33 @@ fun SnapTextApp(
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { }
+    val floatingProjectionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val data = result.data
+        if (result.resultCode == android.app.Activity.RESULT_OK && data != null) {
+            val serviceIntent = Intent(context, FloatingOcrService::class.java).apply {
+                putExtra(FloatingOcrService.EXTRA_RESULT_CODE, result.resultCode)
+                putExtra(FloatingOcrService.EXTRA_RESULT_DATA, data)
+            }
+            runCatching { ContextCompat.startForegroundService(context, serviceIntent) }
+                .onFailure { Toast.makeText(context, "Could not start floating OCR: " + it.message, Toast.LENGTH_LONG).show() }
+        } else {
+            Toast.makeText(context, "Screen capture permission was not granted.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun enableFloatingOcr() {
+        if (!Settings.canDrawOverlays(context)) {
+            val overlayIntent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context.packageName))
+            runCatching { context.startActivity(overlayIntent) }
+                .onFailure { Toast.makeText(context, "Open Android Settings and allow Display over other apps for SnapText.", Toast.LENGTH_LONG).show() }
+            Toast.makeText(context, "Allow SnapText to display over other apps, then tap Floating screen OCR again.", Toast.LENGTH_LONG).show()
+            return
+        }
+        val manager = context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        floatingProjectionLauncher.launch(manager.createScreenCaptureIntent())
+    }
     var connectedAccount by remember { mutableStateOf<SnapTextAccount?>(null) }
     var accountBusy by remember { mutableStateOf(false) }
     var deletingAccount by remember { mutableStateOf(false) }
@@ -623,7 +652,8 @@ fun SnapTextApp(
                         onUsageClick = {
                             if (!isPremiumAccount) showPremiumSheet = true
                             else viewModel.navigateTo(Screen.Account)
-                        }
+                        },
+                        onEnableFloatingOcr = { enableFloatingOcr() }
                     )
                 }
 
