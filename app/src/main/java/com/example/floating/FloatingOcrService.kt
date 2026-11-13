@@ -308,9 +308,18 @@ class FloatingOcrService : Service() {
                 paint.color = Color.argb(235, 24, 115, 230)
                 canvas.drawCircle(width / 2f, height / 2f, dp(27), paint)
                 paint.color = Color.WHITE
-                paint.textAlign = Paint.Align.CENTER
-                paint.textSize = dp(29)
-                canvas.drawText("⌕", width / 2f, height / 2f + dp(10), paint)
+                val cx = width / 2f
+                val cy = height / 2f
+                val body = RectF(cx - dp(15), cy - dp(10), cx + dp(15), cy + dp(11))
+                canvas.drawRoundRect(body, dp(4), dp(4), paint)
+                canvas.drawRoundRect(RectF(cx - dp(8), cy - dp(14), cx + dp(3), cy - dp(10)), dp(2), dp(2), paint)
+                paint.color = Color.rgb(24, 115, 230)
+                canvas.drawCircle(cx, cy, dp(6), paint)
+                paint.color = Color.WHITE
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = dp(2)
+                canvas.drawCircle(cx, cy, dp(5), paint)
+                paint.style = Paint.Style.FILL
             }
         }
         override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -388,14 +397,15 @@ private class SelectionOverlay(
                 canvas.drawCircle(r.left, r.top, 2.2f, paint)
             }
         }
+        val d = resources.displayMetrics.density
         paint.color = Color.argb(225, 18, 28, 44)
-        canvas.drawRoundRect(16f, 18f, width - 16f, 66f, 18f, 18f, paint)
+        canvas.drawRoundRect(16f * d, 8f * d, width - 16f * d, 64f * d, 18f * d, 18f * d, paint)
         paint.color = Color.WHITE
-        paint.textSize = 14f * resources.displayMetrics.density
-        canvas.drawText("Select all", 32f, 48f, paint)
-        canvas.drawText("Copy", 132f, 48f, paint)
-        canvas.drawText("Scroll", 212f, 48f, paint)
-        canvas.drawText("×", width - 44f, 48f, paint)
+        paint.textSize = 14f * d
+        canvas.drawText("Select all", 28f * d, 42f * d, paint)
+        canvas.drawText("Copy", 126f * d, 42f * d, paint)
+        canvas.drawText("Scroll", 196f * d, 42f * d, paint)
+        canvas.drawText("×", width - 42f * d, 42f * d, paint)
         if (now - lastRecognizedAt < 1300L) postInvalidateDelayed(100)
     }
 
@@ -405,11 +415,12 @@ private class SelectionOverlay(
         if (event.action != MotionEvent.ACTION_UP) return true
         val x = event.x
         val y = event.y
-        if (y < 75f) {
+        val d = resources.displayMetrics.density
+        if (y < 75f * d) {
             when {
-                x < 115f -> selected = words.indices.toCollection(linkedSetOf())
-                x < 195f -> onCopy(selected.sorted().joinToString(" ") { words[it].text }.ifBlank { words.joinToString(" ") { it.text } })
-                x < 270f -> onScrollMode(!scrollMode)
+                x < 115f * d -> selected = words.indices.toCollection(linkedSetOf())
+                x < 195f * d -> onCopy(selected.sorted().joinToString(" ") { words[it].text }.ifBlank { words.joinToString(" ") { it.text } })
+                x < 270f * d -> onScrollMode(!scrollMode)
                 else -> onClose()
             }
             invalidate()
