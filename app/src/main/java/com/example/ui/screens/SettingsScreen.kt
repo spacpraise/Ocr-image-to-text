@@ -51,6 +51,7 @@ fun SettingsScreen(
     daysUntilExpiry: Int? = null,
     isLifetime: Boolean = false,
     onUsageClick: () -> Unit = {},
+    onEnableFloatingOcr: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
@@ -102,6 +103,8 @@ fun SettingsScreen(
                     SettingsRow(Icons.Outlined.BrightnessAuto, "Appearance", themeLabel(currentTheme)) { showThemePicker = true }
                     SettingsDivider()
                     SettingsRow(Icons.Outlined.History, "History", null, onHistoryClick)
+                    SettingsDivider()
+                    SettingsRow(Icons.Outlined.DataUsage, "Floating screen OCR", "Enable", onEnableFloatingOcr)
                     SettingsDivider()
                     SettingsRow(
                         icon = Icons.Outlined.DataUsage,
