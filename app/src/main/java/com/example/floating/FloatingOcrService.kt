@@ -239,6 +239,7 @@ class FloatingOcrService : Service() {
                 scrollMode = enabled
                 selectionView?.setTouchThrough(enabled)
                 selectionView?.setScrollMode(enabled)
+                if (enabled) selectionView?.visibility = View.INVISIBLE
                 captureRequested.set(true)
             },
             onClose = { removeSelectionOverlay() }
